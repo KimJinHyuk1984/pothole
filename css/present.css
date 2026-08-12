@@ -1,0 +1,308 @@
+/* 발표 모드 — 스크롤 문서와 같은 beat DOM을 사용한다. */
+
+.present-progress {
+  position: relative;
+  flex: 1;
+  display: none;
+  max-width: 20rem;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.present-progress__bar {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 150ms ease;
+}
+
+.present-toggle {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.55rem;
+  justify-content: center;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.present-toggle:hover {
+  border-color: var(--accent);
+}
+
+.present-toggle kbd {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.present-hud {
+  position: fixed;
+  z-index: 80;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(0.8rem, 2vw, 1.5rem);
+  display: none;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.present-indicator {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.present-exit {
+  display: inline-flex;
+  min-height: 1.9rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--muted);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.present-exit:hover,
+.present-exit:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.present-help {
+  position: fixed;
+  z-index: 85;
+  bottom: clamp(3.8rem, 8vh, 5.5rem);
+  left: 50%;
+  display: none;
+  max-width: calc(100vw - 2rem);
+  padding: 0.55rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--muted) 45%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--bar) 90%, transparent);
+  color: var(--fg-soft);
+  font-family: var(--font-mono);
+  font-size: clamp(0.66rem, 1.5vw, 0.76rem);
+  letter-spacing: 0.02em;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  transform: translate(-50%, 0.35rem);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.present-help.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.blackout {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: none;
+  background: var(--bg);
+}
+
+[data-blackout="true"] .blackout {
+  display: block;
+}
+
+[data-mode="present"] {
+  overflow: hidden;
+}
+
+[data-mode="present"] body {
+  overflow: hidden;
+}
+
+[data-mode="present"] .demo-topbar {
+  position: fixed;
+  z-index: 90;
+  inset: 0 0 auto;
+  min-height: 3rem;
+  gap: clamp(1rem, 4vw, 3rem);
+  border-bottom-color: color-mix(in srgb, var(--line) 76%, transparent);
+  background: color-mix(in srgb, var(--bar) 88%, transparent);
+}
+
+[data-mode="present"] .theme-toggle,
+[data-mode="present"] .present-toggle {
+  display: none;
+}
+
+[data-mode="present"] .road-divider {
+  display: none;
+}
+
+[data-mode="present"] .present-progress {
+  display: block;
+  max-width: none;
+}
+
+[data-mode="present"] .doc {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  padding-inline: clamp(2rem, 7vw, 7rem);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+
+[data-mode="present"] .beat {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-content: center;
+  padding-block: clamp(5rem, 9vh, 7rem);
+  scroll-snap-align: center;
+  font-size: 1.18em;
+}
+
+[data-mode="present"] .beat[data-tall] {
+  display: block;
+  min-height: auto;
+  padding-block: 6vh;
+  scroll-snap-align: start;
+}
+
+[data-mode="present"] h1 {
+  font-size: clamp(2.83rem, 8.25vw, 6.37rem);
+}
+
+[data-mode="present"] h2 {
+  font-size: clamp(1.95rem, 4.7vw, 3.25rem);
+}
+
+[data-mode="present"] h3 {
+  font-size: clamp(1.2rem, 2.35vw, 1.55rem);
+}
+
+[data-mode="present"] .code pre[class*="language-"] {
+  font-size: clamp(0.92rem, 1.75vw, 1.06rem);
+}
+
+[data-mode="present"] .note-teacher {
+  display: none;
+}
+
+[data-mode="present"] .code-step-controls {
+  display: flex;
+  min-height: 2.65rem;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border-top-color: color-mix(in srgb, var(--muted) 30%, transparent);
+  background: transparent;
+}
+
+[data-mode="present"] .code-step-dots {
+  flex: 0 1 auto;
+  gap: 0.38rem;
+  margin-inline: auto;
+}
+
+[data-mode="present"] .code-step-dot {
+  width: 0.34rem;
+  height: 0.34rem;
+  border-color: var(--muted);
+  background: transparent;
+  opacity: 0.56;
+}
+
+[data-mode="present"] .code-step-dot.is-complete {
+  border-color: var(--muted);
+  background: var(--muted);
+  opacity: 0.7;
+}
+
+[data-mode="present"] .code-step-dot.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: none;
+  opacity: 1;
+}
+
+[data-mode="present"] .code-step-button {
+  min-height: 1.9rem;
+  padding-inline: 0.72rem;
+  border-color: var(--muted);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+[data-mode="present"] .code-step-button:hover:not(:disabled),
+[data-mode="present"] .code-step-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+[data-mode="present"] .code-step-status {
+  min-width: 2.85rem;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+[data-mode="present"] .present-hud {
+  display: flex;
+}
+
+[data-mode="present"] .present-help {
+  display: block;
+}
+
+[data-mode="present"][data-cursor="hidden"],
+[data-mode="present"][data-cursor="hidden"] * {
+  cursor: none !important;
+}
+
+@media (max-width: 46rem) {
+  [data-mode="present"] .demo-topbar {
+    padding-inline: 1rem;
+  }
+
+  .demo-topbar .brand {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .demo-topbar .brand::before {
+    width: 2.25rem;
+  }
+
+  [data-mode="present"] .doc {
+    padding-inline: clamp(1rem, 5vw, 2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .present-progress__bar {
+    transition: none;
+  }
+
+  [data-mode="present"] .doc {
+    scroll-behavior: auto;
+  }
+
+  .present-help {
+    transition: none !important;
+  }
+}

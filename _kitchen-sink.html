@@ -10,21 +10,34 @@
         const saved = localStorage.getItem("pothole:theme");
         const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
         document.documentElement.dataset.theme = saved || preferred;
+        if (localStorage.getItem("pothole:mode") === "present") {
+          document.documentElement.dataset.mode = "present";
+        }
       })();
     </script>
     <link rel="stylesheet" href="vendor/prism/prism.css">
     <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/present.css">
     <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/present.js"></script>
   </head>
   <body>
     <header class="demo-topbar">
       <a class="brand" href="#top" aria-label="컴포넌트 전시장 처음으로">POTHOLE.CNN / UI LAB</a>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
-        <span class="theme-toggle__icon" aria-hidden="true">☾</span>
-        <span data-theme-label>라이트 모드</span>
-      </button>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1">
+        <span class="present-progress__bar" data-present-progress></span>
+      </div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+          <span class="theme-toggle__icon" aria-hidden="true">☾</span>
+          <span data-theme-label>라이트 모드</span>
+        </button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false">
+          <span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd>
+        </button>
+      </div>
     </header>
 
     <main class="doc" id="top">
@@ -100,21 +113,22 @@
         </figure>
       </section>
 
-      <section class="beat" data-beat id="code-highlight">
+      <section class="beat" data-beat data-code-step-beat id="code-highlight">
         <div class="section-head">
           <p class="eyebrow">Code block · Highlight</p>
           <h2>지금 볼 줄을 차선처럼 표시한다</h2>
           <p>강조된 세 줄이 특징을 찾고, 활성화하고, 중요한 값만 남기는 CNN의 눈입니다.</p>
         </div>
 
-        <figure class="code" data-lang="python" data-file="mnist_cnn.py" data-highlight="3-5">
+        <figure class="code" data-lang="python" data-file="mnist_cnn.py"
+          data-steps='[{"lines":"3","note":"Conv2D는 3×3 필터 32개로 가로선·세로선·곡선 같은 특징을 찾습니다."},{"lines":"5","note":"MaxPooling은 2×2 영역의 최댓값만 남겨 강한 특징을 보존하고 크기를 절반으로 줄입니다."},{"lines":"7","note":"Flatten은 14×14×32 특성맵을 6,272개의 1차원 목록으로 펼칩니다."},{"lines":"8-12","note":"Dense와 Softmax는 정리된 특징을 바탕으로 숫자 0~9의 확률을 판단합니다."}]'>
           <figcaption>
             <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
             <span class="fname">mnist_cnn.py</span>
             <button class="btn-copy" type="button">복사</button>
           </figcaption>
           <div class="code-viewport">
-            <pre class="line-numbers" data-line="3-5"><code class="language-python">inputs = tf.keras.Input(shape=(28, 28, 1))
+            <pre class="line-numbers"><code class="language-python">inputs = tf.keras.Input(shape=(28, 28, 1))
 
 x = tf.keras.layers.Conv2D(32, (3, 3), padding='same')(inputs)
 x = tf.keras.layers.ReLU()(x)
@@ -129,7 +143,7 @@ outputs = tf.keras.layers.Softmax()(outputs)
 
 model = tf.keras.Model(inputs, outputs, name='mnist_cnn_baseline')</code></pre>
           </div>
-          <div class="code-note"><b>3행</b> 3×3 필터 32개 · <b>4행</b> 음수 제거 · <b>5행</b> 2×2 영역의 최댓값만 보존</div>
+          <div class="code-note" aria-live="polite">강조 없음 · 다음 버튼이나 발표 모드의 → 키로 설명을 시작하세요.</div>
         </figure>
       </section>
 
@@ -140,14 +154,14 @@ model = tf.keras.Model(inputs, outputs, name='mnist_cnn_baseline')</code></pre>
           <p>12줄까지만 먼저 보이지만 복사할 때는 학습곡선 함수 전체가 복사됩니다.</p>
         </div>
 
-        <figure class="code is-collapsed" data-lang="python" data-file="mnist_cnn.py" data-collapse="12">
+        <figure class="code is-collapsed" data-lang="python" data-file="mnist_cnn.py" data-highlight="3" data-collapse="12">
           <figcaption>
             <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
             <span class="fname">mnist_cnn.py · plot_history_subplot()</span>
             <button class="btn-copy" type="button">복사</button>
           </figcaption>
           <div class="code-viewport">
-            <pre class="line-numbers"><code class="language-python">def plot_history_subplot(history):
+            <pre class="line-numbers" data-line="3"><code class="language-python">def plot_history_subplot(history):
     hist = history.history
     epochs = np.arange(1, len(hist["loss"]) + 1)
 
@@ -350,6 +364,13 @@ plot_history_subplot(history)</code></pre>
         </section>
       </section>
     </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud">
+      <div class="present-indicator" data-present-indicator aria-live="polite"></div>
+      <button class="present-exit" type="button" data-present-exit>나가기</button>
+    </div>
+    <div class="blackout" aria-hidden="true"></div>
 
     <script>
       (() => {

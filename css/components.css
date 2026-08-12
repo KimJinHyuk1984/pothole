@@ -127,6 +127,25 @@
   white-space: nowrap;
 }
 
+.fname::after {
+  margin-left: 0.12em;
+  color: var(--accent);
+  content: "_";
+  animation: code-cursor 1.1s steps(1, end) infinite;
+}
+
+@keyframes code-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .btn-copy {
   min-width: 4.6rem;
   min-height: 2rem;
@@ -257,10 +276,89 @@
   color: #a8a49d;
   font-size: 0.82rem;
   line-height: 1.65;
+  opacity: 1;
+  transition: opacity 150ms ease;
 }
 
 .code-note b {
   color: var(--accent);
+}
+
+.code-note.is-changing {
+  opacity: 0;
+}
+
+.code-step-controls {
+  display: flex;
+  min-height: 3.15rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--code-line);
+  background: #101315;
+}
+
+.code-step-button {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.85rem;
+  border: 1px solid #30363b;
+  border-radius: var(--r-sm);
+  background: #171b1e;
+  color: var(--code-fg);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.code-step-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.code-step-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.code-step-dots {
+  display: inline-flex;
+  flex: 1;
+  gap: 0.48rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.code-step-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border: 1px solid #596064;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.code-step-dot.is-complete {
+  border-color: color-mix(in srgb, var(--accent) 55%, #596064);
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.code-step-dot.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--code-hl);
+}
+
+.code-step-status {
+  min-width: 3.25rem;
+  color: #777d80;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-align: center;
 }
 
 /* 설명 컴포넌트 */
@@ -655,5 +753,16 @@
 
   .media-card__stage {
     min-height: 17rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fname::after {
+    animation: none;
+    opacity: 1;
+  }
+
+  .code-note {
+    transition: none;
   }
 }
