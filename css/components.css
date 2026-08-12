@@ -756,6 +756,17 @@
   }
 }
 
+@media (max-width: 42rem) {
+  .theme-toggle {
+    min-width: 2.35rem;
+    padding-inline: 0.55rem;
+  }
+
+  .theme-toggle [data-theme-label] {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fname::after {
     animation: none;

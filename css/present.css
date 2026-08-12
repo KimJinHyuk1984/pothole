@@ -306,3 +306,14 @@
     transition: none !important;
   }
 }
+
+@media (max-width: 42rem) {
+  .present-toggle {
+    min-width: 2.35rem;
+    padding-inline: 0.55rem;
+  }
+
+  .present-toggle [data-present-label] {
+    display: none;
+  }
+}

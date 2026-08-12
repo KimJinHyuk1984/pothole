@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="딥러닝 CNN으로 도로 위 포트홀을 분류하는 고등학생 대상 인터랙티브 웹 교재">
+    <title>딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") {
+            document.documentElement.dataset.mode = "present";
+          }
+        } catch {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="index">
+    <header class="demo-topbar">
+      <a class="brand" href="#top" aria-label="강의 홈 처음으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1">
+        <span class="present-progress__bar" data-present-progress></span>
+      </div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+          <span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span>
+          <span data-theme-label>라이트 모드</span>
+        </button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false">
+          <span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd>
+        </button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro home-hero" data-beat>
+        <div class="hero-copy">
+          <p class="eyebrow">Deep Learning · CNN</p>
+          <h1>딥러닝 CNN으로 포트홀을 찾아라</h1>
+          <p class="lede">도로 이미지를 읽고, 특징을 학습하고, 포트홀을 분류하는 첫 CNN 프로젝트입니다.</p>
+          <p class="hero-kicker">동양고등학교 김진혁</p>
+          <div class="hero-actions">
+            <a class="btn hero-cta" href="#curriculum">학습 경로 보기</a>
+            <span class="hero-page-count" data-course-page-count>— pages</span>
+          </div>
+        </div>
+
+        <figure class="hero-road" aria-label="CNN이 야간 도로의 포트홀을 탐지하는 장면을 표현한 그래픽">
+          <svg viewBox="0 0 720 520" role="img" aria-labelledby="hero-road-title hero-road-desc">
+            <title id="hero-road-title">야간 도로 위 포트홀 탐지</title>
+            <desc id="hero-road-desc">가로등이 켜진 야간 도로에서 주황색 탐지 영역이 포트홀을 표시한다.</desc>
+            <defs>
+              <linearGradient id="night-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#050709"/>
+                <stop offset="1" stop-color="#172027"/>
+              </linearGradient>
+              <linearGradient id="road-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2a2f32"/>
+                <stop offset="1" stop-color="#0d0f10"/>
+              </linearGradient>
+              <radialGradient id="lamp-glow">
+                <stop offset="0" stop-color="#ffc72c" stop-opacity="0.52"/>
+                <stop offset="1" stop-color="#ffc72c" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="hole-fill" cx="45%" cy="35%">
+                <stop offset="0" stop-color="#16191b"/>
+                <stop offset="0.72" stop-color="#050607"/>
+                <stop offset="1" stop-color="#000"/>
+              </radialGradient>
+            </defs>
+
+            <rect width="720" height="520" fill="url(#night-sky)"/>
+            <g fill="#8da0aa" opacity="0.55">
+              <circle cx="88" cy="72" r="1.5"/>
+              <circle cx="184" cy="48" r="1"/>
+              <circle cx="327" cy="82" r="1.4"/>
+              <circle cx="541" cy="52" r="1.2"/>
+              <circle cx="657" cy="91" r="1.6"/>
+            </g>
+            <path d="M0 180 48 156 103 169 154 130 212 168 270 146 331 178 389 142 448 173 513 126 574 165 636 143 720 175V238H0Z" fill="#101518"/>
+            <path d="M0 208H720" stroke="#303a40" stroke-width="2"/>
+
+            <g class="road-lamp">
+              <ellipse cx="132" cy="194" rx="104" ry="88" fill="url(#lamp-glow)"/>
+              <path d="M92 234V111q0-18 18-18h34" fill="none" stroke="#505a5f" stroke-width="5"/>
+              <rect x="138" y="86" width="42" height="12" rx="4" fill="#ffc72c"/>
+            </g>
+            <g class="road-lamp" opacity="0.68">
+              <ellipse cx="610" cy="203" rx="76" ry="64" fill="url(#lamp-glow)"/>
+              <path d="M639 233V132q0-13-13-13h-25" fill="none" stroke="#505a5f" stroke-width="4"/>
+              <rect x="573" y="113" width="31" height="9" rx="3" fill="#ffc72c"/>
+            </g>
+
+            <path d="M216 210H504L694 520H26Z" fill="url(#road-fill)" stroke="#3a4145" stroke-width="3"/>
+            <path d="M229 210 66 520M491 210 654 520" stroke="#6b7376" stroke-width="4"/>
+            <path d="M360 221V264M360 291V359M360 400V504" stroke="#ffc72c" stroke-width="8" stroke-linecap="round" opacity="0.84"/>
+            <path d="M264 312 244 338M456 312 477 338" stroke="#f3efe6" stroke-width="5" stroke-linecap="round" opacity="0.56"/>
+
+            <g class="pothole-rim">
+              <ellipse cx="489" cy="409" rx="88" ry="34" fill="#08090a" opacity="0.45"/>
+              <path d="M408 398c18-26 55-33 84-25 25-12 59 1 75 23-5 31-37 55-79 53-43 4-76-19-80-51Z" fill="url(#hole-fill)" stroke="#ff6b35" stroke-width="4"/>
+              <path d="M431 401c17-13 32-11 47-5 13-12 37-12 57 3" fill="none" stroke="#657076" stroke-width="4" opacity="0.7"/>
+              <ellipse class="scan-ring" cx="488" cy="409" rx="100" ry="51" fill="none" stroke="#ffc72c" stroke-width="3"/>
+              <ellipse class="scan-ring scan-ring--late" cx="488" cy="409" rx="100" ry="51" fill="none" stroke="#ffc72c" stroke-width="2"/>
+            </g>
+
+            <g transform="translate(420 270)">
+              <path d="M0 18V0h18M117 0h18v18M135 74v18h-18M18 92H0V74" fill="none" stroke="#ffc72c" stroke-width="3"/>
+              <rect x="13" y="12" width="109" height="68" fill="#ffc72c" opacity="0.05"/>
+              <text x="22" y="34" fill="#ffc72c" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="1">POTHOLE</text>
+              <text x="22" y="56" fill="#ff6b35" font-family="JetBrains Mono, monospace" font-size="16" font-weight="700">96.4%</text>
+            </g>
+          </svg>
+          <figcaption class="hero-road__label">vision / detecting</figcaption>
+        </figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" id="curriculum" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Course Map</p>
+          <h2>오늘의 주행 경로</h2>
+          <p>홈에서 출발해 머신러닝의 기초를 익히고, CNN을 거쳐 실제 포트홀 분류 모델까지 완성합니다. 한 번 방문한 페이지에는 체크가 표시됩니다.</p>
+          <p class="curriculum-meta"><span data-course-page-count>— pages</span> · 4 parts</p>
+        </div>
+        <nav class="curriculum-grid" data-nav-tree aria-label="전체 21페이지 목차" aria-busy="true">
+          <p class="curriculum-loading">목차를 불러오는 중입니다.</p>
+        </nav>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" id="instructor" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Instructor</p>
+          <h2>저는…</h2>
+        </div>
+        <div class="instructor-layout">
+          <figure class="instructor-photo">
+            <img src="assets/slide-003-a.webp" width="456" height="548" loading="lazy" decoding="async" alt="김진혁 동양고등학교 교사 프로필 사진">
+            <figcaption>동양고등학교 · 수학, 정보</figcaption>
+          </figure>
+          <div class="instructor-copy">
+            <h3 class="instructor-name">김진혁(<a href="mailto:kimjh0630@naver.com">kimjh0630@naver.com</a>)</h3>
+            <ul class="profile-list">
+              <li>동양고등학교 교사(수학, 정보)</li>
+              <li>성균관대학교 일반대학원 수학교육전공 박사 수료</li>
+              <li>서울시교육청 초중등 AI교육 연구회 부회장</li>
+              <li>(2022개정 교육과정) 『 데이터 과학 』 교과서 집필진(올드앤뉴)</li>
+              <li>(2022개정 교육과정) 『 논리와 사고 』 교과서 집필진(세종)</li>
+              <li>AIEDAP마스터 교원(서울, 경기, 인천, 제주 권역)</li>
+              <li>서울시교육청 AI융합교육 선도교사(2023~)</li>
+              <li>『인공지능 진로진학 교육자료』 집필진(서울시교육청, 2022)</li>
+              <li>『면접보고 대학가자』 집필진(올드앤뉴, 2023)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" id="links" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Before Class</p>
+          <h2>수업에 들어가기 전에</h2>
+          <p>설문에 응답하고, 수업 자료가 모인 구글 클래스룸을 확인합니다.</p>
+        </div>
+        <div class="link-grid">
+          <a class="resource-link is-disabled" data-link-key="surveyPre" aria-disabled="true" tabindex="-1">
+            <span class="resource-link__top">
+              <span class="resource-link__index">01 / Survey</span>
+              <span class="resource-link__status" data-link-status>준비 중</span>
+            </span>
+            <span class="resource-link__copy">
+              <h3>사전 설문</h3>
+              <p>사전 설문에 응답해 주세요!</p>
+            </span>
+          </a>
+          <a class="resource-link is-disabled" data-link-key="classroom" aria-disabled="true" tabindex="-1">
+            <span class="resource-link__top">
+              <span class="resource-link__index">02 / Classroom</span>
+              <span class="resource-link__status" data-link-status>준비 중</span>
+            </span>
+            <span class="resource-link__copy">
+              <h3>구글 클래스룸</h3>
+              <p>인공지능, 세상을 어떻게 학습하나?</p>
+            </span>
+          </a>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" id="goals" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Today’s Goal · 01</p>
+          <h2>우리의 오늘 목표</h2>
+          <p>데이터 준비부터 인공지능 분류, 결과 시각화까지 하나의 흐름으로 연결합니다.</p>
+        </div>
+        <div class="goal-layout">
+          <ol class="goal-flow">
+            <li>
+              <span class="goal-flow__number">01</span>
+              <div>
+                <strong>학습 데이터셋 준비</strong>
+                <p>도로 이미지를 포트홀과 정상으로 나누어 모델이 학습할 재료를 준비합니다.</p>
+              </div>
+            </li>
+            <li>
+              <span class="goal-flow__number">02</span>
+              <div>
+                <strong>인공지능 분류</strong>
+                <p>CNN이 이미지의 특징을 학습하고 두 범주를 구분하도록 만듭니다.</p>
+              </div>
+            </li>
+            <li>
+              <span class="goal-flow__number">03</span>
+              <div>
+                <strong>결과 시각화</strong>
+                <p>모델이 내린 판단과 학습 결과를 화면에서 직접 확인합니다.</p>
+              </div>
+            </li>
+          </ol>
+          <figure class="source-frame">
+            <div class="source-frame__stage">
+              <img src="assets/slide-006-a.webp" width="1600" height="873" loading="lazy" decoding="async" alt="학습 데이터셋 준비, 인공지능 분류, 결과 시각화의 세 단계">
+            </div>
+            <figcaption>학습 데이터셋 준비 → 인공지능 분류 → 결과 시각화</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="goal-outcome">
+          <figure class="source-frame">
+            <div class="source-frame__stage">
+              <img src="assets/slide-007-a.webp" width="1600" height="1075" loading="lazy" decoding="async" alt="이미지 업로드와 웹캠 촬영을 지원하는 Pothole Detector 화면">
+            </div>
+            <figcaption>Pothole Detector · Keras + Streamlit</figcaption>
+          </figure>
+          <div class="goal-outcome__copy">
+            <p class="eyebrow">Today’s Goal · 02</p>
+            <h2>직접 만든 모델을 웹에서 확인하기</h2>
+            <p>이미지를 올리거나 웹캠으로 도로를 촬영하고, 학습한 모델이 포트홀인지 정상 도로인지 판정하는 과정을 완성합니다.</p>
+            <div class="goal-outcome__steps" aria-label="최종 결과 기능">
+              <span>이미지 업로드</span>
+              <span>웹캠 촬영</span>
+              <span>포트홀 / 정상 판정</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <span>딥러닝 CNN으로 포트홀을 찾아라</span>
+        <a href="#top">맨 위로 ↑</a>
+      </footer>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud">
+      <div class="present-indicator" data-present-indicator aria-live="polite"></div>
+      <button class="present-exit" type="button" data-present-exit>나가기</button>
+    </div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

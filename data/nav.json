@@ -1,0 +1,198 @@
+{
+  "course": {
+    "title": "딥러닝 CNN으로 포트홀을 찾아라",
+    "totalPages": 21
+  },
+  "parts": [
+    {
+      "id": 1,
+      "title": "머신러닝 기초와 MLP",
+      "subtitle": "인공지능은 세상을 어떻게 학습하나?"
+    },
+    {
+      "id": 2,
+      "title": "CNN의 등장",
+      "subtitle": "MLP의 문제점을 극복한 CNN의 이해"
+    },
+    {
+      "id": 3,
+      "title": "CoMNIST와 하이퍼파라미터",
+      "subtitle": "이번에는 숫자가 아니라 알파벳이다"
+    },
+    {
+      "id": 4,
+      "title": "포트홀 분류 프로젝트",
+      "subtitle": "도로 위의 포트홀을 찾아라"
+    }
+  ],
+  "pages": [
+    {
+      "index": 1,
+      "slug": "index",
+      "href": "index.html",
+      "title": "강의 홈",
+      "part": 0,
+      "slides": [1, 7]
+    },
+    {
+      "index": 2,
+      "slug": "p1-1-how-ai-learns",
+      "href": "p1-1-how-ai-learns.html",
+      "title": "인공지능은 어떻게 학습하나",
+      "part": 1,
+      "slides": [8, 17]
+    },
+    {
+      "index": 3,
+      "slug": "p1-2-error",
+      "href": "p1-2-error.html",
+      "title": "오차와 경사하강법",
+      "part": 1,
+      "slides": [18, 20]
+    },
+    {
+      "index": 4,
+      "slug": "p1-3-neural-net",
+      "href": "p1-3-neural-net.html",
+      "title": "인공신경망과 활성화 함수",
+      "part": 1,
+      "slides": [21, 31]
+    },
+    {
+      "index": 5,
+      "slug": "p1-4-mlp",
+      "href": "p1-4-mlp.html",
+      "title": "MLP와 과적합",
+      "part": 1,
+      "slides": [32, 35]
+    },
+    {
+      "index": 6,
+      "slug": "p1-5-mnist-mlp",
+      "href": "p1-5-mnist-mlp.html",
+      "title": "MNIST를 MLP로 풀어보기",
+      "part": 1,
+      "slides": [36, 53]
+    },
+    {
+      "index": 7,
+      "slug": "p1-6-mlp-limits",
+      "href": "p1-6-mlp-limits.html",
+      "title": "MLP의 한계",
+      "part": 1,
+      "slides": [54, 57]
+    },
+    {
+      "index": 8,
+      "slug": "p2-1-why-cnn",
+      "href": "p2-1-why-cnn.html",
+      "title": "왜 CNN인가",
+      "part": 2,
+      "slides": [58, 64]
+    },
+    {
+      "index": 9,
+      "slug": "p2-2-conv-pool",
+      "href": "p2-2-conv-pool.html",
+      "title": "합성곱층과 풀링층",
+      "part": 2,
+      "slides": [65, 69]
+    },
+    {
+      "index": 10,
+      "slug": "p2-3-mnist-cnn",
+      "href": "p2-3-mnist-cnn.html",
+      "title": "MNIST를 CNN으로 풀어보기",
+      "part": 2,
+      "slides": [70, 82]
+    },
+    {
+      "index": 11,
+      "slug": "p2-4-cnn-limits",
+      "href": "p2-4-cnn-limits.html",
+      "title": "CNN도 못 넘은 벽",
+      "part": 2,
+      "slides": [83, 86]
+    },
+    {
+      "index": 12,
+      "slug": "p2-5-augmentation",
+      "href": "p2-5-augmentation.html",
+      "title": "데이터 증강",
+      "part": 2,
+      "slides": [87, 90]
+    },
+    {
+      "index": 13,
+      "slug": "p3-1-comnist-gpu",
+      "href": "p3-1-comnist-gpu.html",
+      "title": "CoMNIST와 A100 GPU",
+      "part": 3,
+      "slides": [91, 104]
+    },
+    {
+      "index": 14,
+      "slug": "p3-2-baseline",
+      "href": "p3-2-baseline.html",
+      "title": "CoMNIST 베이스라인 코드",
+      "part": 3,
+      "slides": [105, 126]
+    },
+    {
+      "index": 15,
+      "slug": "p3-3-hyperparams",
+      "href": "p3-3-hyperparams.html",
+      "title": "하이퍼파라미터 9종 비교",
+      "part": 3,
+      "slides": [127, 139]
+    },
+    {
+      "index": 16,
+      "slug": "p3-4-challenge",
+      "href": "p3-4-challenge.html",
+      "title": "CoMNIST 챌린지",
+      "part": 3,
+      "slides": [140, 144]
+    },
+    {
+      "index": 17,
+      "slug": "p4-1-dataset",
+      "href": "p4-1-dataset.html",
+      "title": "포트홀 데이터셋",
+      "part": 4,
+      "slides": [145, 147]
+    },
+    {
+      "index": 18,
+      "slug": "p4-2-baseline",
+      "href": "p4-2-baseline.html",
+      "title": "포트홀 베이스라인 코드",
+      "part": 4,
+      "slides": [148, 167]
+    },
+    {
+      "index": 19,
+      "slug": "p4-3-metrics",
+      "href": "p4-3-metrics.html",
+      "title": "평가지표 읽는 법",
+      "part": 4,
+      "slides": [168, 171]
+    },
+    {
+      "index": 20,
+      "slug": "p4-4-results",
+      "href": "p4-4-results.html",
+      "title": "학습 결과 해석",
+      "part": 4,
+      "slides": [172, 181]
+    },
+    {
+      "index": 21,
+      "slug": "p4-5-wrapup",
+      "href": "p4-5-wrapup.html",
+      "title": "마무리",
+      "part": 4,
+      "slides": [182, 184]
+    }
+  ]
+}
