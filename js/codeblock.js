@@ -69,3 +69,17 @@ document.querySelectorAll("figure.code").forEach((figure) => {
 });
 
 window.Prism?.highlightAll();
+
+function normalizeLineNumbers() {
+  document.querySelectorAll("figure.code pre.line-numbers").forEach((pre) => {
+    const code = pre.querySelector(":scope > code");
+    const rows = code?.querySelector(":scope > .line-numbers-rows");
+    if (!code || !rows) return;
+
+    const lineCount = code.textContent.replace(/\n$/, "").split("\n").length;
+    rows.replaceChildren(...Array.from({ length: lineCount }, () => document.createElement("span")));
+    pre.append(rows);
+  });
+}
+
+normalizeLineNumbers();

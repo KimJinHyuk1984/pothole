@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MNIST 숫자 데이터를 CNN으로 학습하며 합성곱·풀링·Flatten·Dense의 코드와 파라미터를 읽는 수업">
+    <title>MNIST를 CNN으로 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        window.Prism = { manual: true };
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p2-3-mnist-cnn">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 2 · CNN Practice</p>
+          <h1>MNIST를 CNN으로</h1>
+          <p class="lede">같은 28×28 숫자를 이번에는 펼치기 전에 3×3 필터로 살펴봅니다. 특징을 찾고 줄인 뒤 분류하는 CNN의 흐름을 노트북 코드로 연결합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 70–82</span><span>Notebook · mnist_CNN.ipynb</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 01 / 10</p><h2>모듈 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 2">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">01_modules.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 각종 모듈 불러오기
+
+import os, random
+import numpy as np
+import tensorflow as tf
+import koreanize_matplotlib
+import matplotlib.pyplot as plt</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 학습과 결과 그래프에 필요한 모듈을 불러옵니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>운영체제·난수, 배열 계산, 딥러닝 모델, 한글 그래프를 담당하는 모듈을 준비합니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 02 / 10</p><h2>랜덤 시드 고정</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 4">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">02_seed.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">SEED = 42
+os.environ['PYTHONHASHSEED'] = str(SEED)
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 파이썬, NumPy, TensorFlow의 무작위성을 함께 고정합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>같은 실험을 다시 실행했을 때 결과를 비교할 수 있도록 가중치 초기화와 데이터 처리에 쓰이는 난수를 고정합니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 03 / 10</p><h2>MNIST 데이터 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 6">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">03_load_data.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">mnist = tf.keras.datasets.mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · MNIST를 학습용과 테스트용으로 나눠 받습니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습용 이미지와 정답은 <code>x_train, y_train</code>, 마지막 시험용 이미지와 정답은 <code>x_test, y_test</code>에 들어갑니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 04 / 10</p><h2>채널 차원 하나를 늘린다</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 8">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">04_reshape.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># x_train[0].shape -> (28, 28)
+# 맨 앞 -1의 의미는 맨 앞의 수치인 이미지 개수는 알아서 계산해라! 라는 의미
+x_train = x_train.reshape(-1, 28, 28, 1)
+x_test = x_test.reshape(-1, 28, 28, 1)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 흑백 채널 1개를 마지막 차원에 추가합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>CNN의 입력은 높이·너비·채널의 3차원 데이터입니다. 따라서 이미지 60,000장의 모양은 <code>(60000, 28, 28)</code>에서 <code>(60000, 28, 28, 1)</code>로 바뀝니다. <code>-1</code>은 이미지 개수를 알아서 계산하라는 뜻입니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 05 / 10</p><h2>픽셀값 정규화</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 12">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">05_normalize.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 0 ~ 255 사이의 값을 0 ~ 1 사이의 값으로 만들어 계산을 돕기
+
+x_train, x_test = x_train / 255.0, x_test / 255.0</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 0~255 범위를 0~1 범위로 줄입니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>입력의 크기를 맞춰 경사하강법이 안정적으로 움직이게 하는 과정은 MLP와 같습니다. 달라지는 것은 정규화 뒤에 이미지를 곧바로 펼치지 않고 합성곱층으로 보낸다는 점입니다.</p></div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall data-code-step-beat>
+        <div class="section-head"><p class="eyebrow">Code 06 / 10 · Steps</p><h2>특징 추출에서 분류까지</h2><p>Conv2D → MaxPooling → Flatten → Dense 순서로 강조를 이동하며 각 층이 바꾸는 데이터 모양을 확인합니다.</p></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 14" data-steps='[{"lines":"3-4","note":"Conv2D는 3×3 필터 32개로 가로선·세로선·곡선 같은 특징을 찾고 ReLU로 양수 신호를 남깁니다."},{"lines":"5","note":"MaxPooling은 2×2 영역의 최댓값만 남겨 28×28을 14×14로 줄입니다."},{"lines":"7","note":"Flatten은 14×14×32 특성맵을 6,272개의 1차원 값으로 펼칩니다."},{"lines":"8-12","note":"Dense 분류기는 128개 뉴런을 거쳐 숫자 0~9의 열 개 확률을 만듭니다."}]'>
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">06_cnn_model.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">inputs = tf.keras.Input(shape=(28, 28, 1))
+
+x = tf.keras.layers.Conv2D(32, (3, 3), padding='same')(inputs)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPool2D((2, 2))(x)
+
+x = tf.keras.layers.Flatten()(x)
+x = tf.keras.layers.Dense(128)(x)
+x = tf.keras.layers.ReLU()(x)
+
+outputs = tf.keras.layers.Dense(10)(x)
+outputs = tf.keras.layers.Softmax()(outputs)
+
+model = tf.keras.Model(inputs, outputs, name='mnist_cnn_baseline')</code></pre></div>
+          <div class="code-note">첫 단계에서 Conv2D → MaxPooling → Flatten → Dense를 따라갑니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><ul><li><strong>Conv2D:</strong> 3×3 필터 32개가 같은 위치를 훑어 32가지 특징을 찾습니다. <code>padding='same'</code>은 28×28 크기를 유지합니다.</li><li><strong>MaxPool2D:</strong> 2×2에서 가장 큰 신호를 남겨 14×14로 줄입니다.</li><li><strong>Flatten:</strong> 14×14×32를 6,272개 값으로 펼칩니다.</li><li><strong>Dense:</strong> MLP와 같은 분류기가 10개 숫자의 확률을 판단합니다.</li></ul></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 07 / 10</p><h2>CNN 모델 컴파일</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">07_compile.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · MLP와 같은 optimizer, loss, metric으로 구조 차이만 비교합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>모델 구조는 달라졌지만 정답은 여전히 0~9의 정수입니다. 따라서 Adam과 <code>sparse_categorical_crossentropy</code>, accuracy 설정을 그대로 사용합니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 08 / 10 · Parameters · S77</p><h2>320개로 특징을 찾고, 802,944개로 분류한다</h2><p>합성곱층 자체보다 Flatten 뒤 Dense 층에 파라미터가 훨씬 많이 모여 있습니다.</p></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 20">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">08_summary.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.summary()</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · CNN 각 층의 출력 모양과 파라미터 수를 표로 확인합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>모델 요약표를 이용해 합성곱 필터의 320개와 Flatten 뒤 Dense의 802,944개를 분리해서 계산합니다.</p></div>
+        <div class="split-layout split-layout--wide-media">
+          <div class="formula-stack">
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">Conv2D 필터</strong><span class="parameter-formula__equation"><span>(3×3×1 + 1) × 32 =</span><b>320</b></span></p>
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">MaxPooling 뒤 모양</strong><span class="parameter-formula__equation"><b>14×14×32</b></span></p>
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">Dense(128)</strong><span class="parameter-formula__equation"><span>6,272×128 + 128 =</span><b>802,944</b></span></p>
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">Dense(10)</strong><span class="parameter-formula__equation"><span>128×10 + 10 =</span><b>1,290</b></span></p>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-077-a.webp" width="692" height="570" loading="lazy" decoding="async" alt="MNIST CNN 모델 요약표에서 Conv2D 320개, Flatten 출력 6,272개, Dense 802,944개, 출력 Dense 1,290개, 전체 파라미터 804,554개를 보여 주는 실행 결과"></div>
+            <figcaption><strong>model.summary() 실행 결과</strong>전체 804,554개 가운데 합성곱층은 320개이고, Flatten 다음 Dense가 802,944개입니다.</figcaption>
+          </figure>
+        </div>
+        <div class="table-wrap flow-space" tabindex="0" role="region" aria-label="MLP와 CNN 파라미터 비교표">
+          <table class="data-table">
+            <caption>Notebook comparison · MNIST MLP vs CNN</caption>
+            <thead><tr><th scope="col">구분</th><th scope="col">MLP</th><th scope="col">CNN</th></tr></thead>
+            <tbody><tr><th scope="row">총 파라미터</th><td>101,770개</td><td>804,554개</td></tr><tr><th scope="row">첫 Dense 입력</th><td>784</td><td>6,272</td></tr><tr><th scope="row">특징 추출 합성곱</th><td>없음</td><td>320개</td></tr><tr><th scope="row">Flatten 뒤 Dense</th><td>100,480개</td><td>802,944개</td></tr></tbody>
+          </table>
+        </div>
+        <p class="quote-block flow-space">CNN의 강점은 같은 필터가 이미지 전체를 훑는 파라미터 공유입니다. 이 간단한 모델에서는 Flatten 뒤 Dense가 커서 전체 수가 MLP보다 약 8배 많지만, 실제로 이미지를 보는 합성곱 부분은 320개뿐입니다.</p>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 09 / 10</p><h2>30 epoch 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cell 23">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">09_train.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">history = model.fit(x_train, y_train,
+                    validation_split = 0.2,
+                    epochs = 30)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 20%를 검증용으로 분리하고 30 epoch 학습합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>MLP와 같은 학습 조건을 사용하므로 결과 차이는 모델 구조에서 옵니다. <code>history</code>에는 epoch마다 train·validation의 정확도와 손실이 기록됩니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 10 / 10</p><h2>최종 테스트와 학습 곡선</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · cells 25, 26" data-collapse="20">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">10_evaluate_plot.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">print("\n========== 최종 테스트 결과 ==========")
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
+print(f"\n테스트 정확도: {test_acc * 100:.2f}%")
+
+# 그래프로 확인하기
+def plot_history_subplot(history):
+    hist = history.history
+    epochs = np.arange(1, len(hist["loss"]) + 1)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))  # 가로 2개
+
+    # =========================
+    # (왼쪽) Accuracy
+    # =========================
+    ax = axes[0]
+    ax.plot(epochs, hist["accuracy"], linewidth=3, label="train acc")
+    if "val_accuracy" in hist:
+        ax.plot(epochs, hist["val_accuracy"], linewidth=3, label="val acc")
+
+    ax.set_title("Accuracy", fontsize=20, color="blue", pad=12)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Accuracy")
+    ax.set_ylim(-0.05, 1.05)
+    ax.legend()
+
+    # =========================
+    # (오른쪽) Loss (Error)
+    # =========================
+    ax = axes[1]
+    ax.plot(epochs, hist["loss"], linewidth=3, label="train loss")
+    if "val_loss" in hist:
+        ax.plot(epochs, hist["val_loss"], linewidth=3, label="val loss")
+
+    ax.set_title("Loss (Error)", fontsize=20, color="blue", pad=12)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+# 학습 후 호출
+plot_history_subplot(history)</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div>
+          <div class="code-note">노트북 코드 원문 · 테스트 정확도와 train·validation의 Accuracy/Loss를 함께 확인합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습 중 보지 않은 테스트 이미지로 최종 성능을 측정하고, 저장된 <code>history</code>에서 epoch별 기록을 꺼내 왼쪽에는 정확도, 오른쪽에는 손실을 그립니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Result · S79</p><h2>테스트 정확도 98.79%</h2><p>313개 배치로 10,000장의 테스트 데이터를 평가한 실행 결과입니다.</p></div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-079-a.webp" width="690" height="291" loading="lazy" decoding="async" alt="MNIST CNN 최종 테스트에서 정확도 0.9879, 손실 0.0869, 테스트 정확도 98.79퍼센트를 보여 주는 실행 결과"></div>
+          <figcaption><strong>최종 테스트 결과</strong>CNN은 테스트 이미지에서 98.79%의 정확도와 0.0869의 손실을 기록했습니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Accuracy · S80</p><h2>훈련 정확도는 1.0, 검증 정확도는 0.98 부근</h2><p>Train accuracy는 거의 1.0에 도달하지만 validation accuracy는 더 이상 크게 좋아지지 않아 두 곡선 사이의 간격이 유지됩니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-080-a.webp" width="690" height="291" loading="lazy" decoding="async" alt="슬라이드 80에서 다시 확인하는 MNIST CNN의 최종 테스트 정확도 98.79퍼센트 실행 결과"></div>
+            <figcaption><strong>같은 최종 점수 다시 보기</strong>학습 곡선을 해석할 때 최종 테스트 결과와 함께 비교합니다.</figcaption>
+          </figure>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-080-b.webp" width="1395" height="489" loading="lazy" decoding="async" alt="30 epoch 동안 CNN의 train과 validation 정확도 및 손실을 보여 주는 그래프, train 정확도는 1에 가깝고 validation 정확도는 0.98 부근에서 유지된다"></div>
+            <figcaption><strong>Accuracy</strong>모델은 훈련 데이터를 거의 외웠고 검증 정확도는 일정한 수준에서 정체됩니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Loss · S81</p><h2>맞히더라도 확률 분포는 나빠질 수 있다</h2><p>Train loss는 0에 가까워지지만 validation loss는 초반 최소점을 지난 뒤 증가하고 요동합니다. 모델이 훈련 데이터에 과도하게 확신하는 신호입니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-081-a.webp" width="1395" height="489" loading="lazy" decoding="async" alt="CNN의 train loss는 계속 감소하지만 validation loss는 초반 이후 상승하는 학습 곡선"></div>
+            <figcaption><strong>Loss</strong>정확도가 비슷해 보여도 validation loss가 오르면 확률 예측의 질은 나빠지고 있습니다.</figcaption>
+          </figure>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-081-b.webp" width="690" height="291" loading="lazy" decoding="async" alt="슬라이드 81에서 학습 곡선과 함께 다시 제시된 CNN 테스트 정확도 98.79퍼센트 실행 결과"></div>
+            <figcaption><strong>점수와 곡선을 함께 읽기</strong>높은 테스트 정확도 하나만으로 학습 상태를 판단하지 않습니다.</figcaption>
+          </figure>
+        </div>
+        <aside class="note-teacher"><strong>교사용 메모 · S81</strong><p>5 epoch 정도에서 과적합이 일어나고 있다. validation loss가 최소가 되는 초반과 이후 요동을 차례로 짚어 주세요.</p></aside>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Widget ⑥ · Placeholder</p><h2>MLP와 CNN의 파라미터를 같은 눈금에서 비교</h2></div>
+        <section class="widget-shell widget-placeholder" aria-labelledby="cnn-param-widget-title">
+          <header class="widget-titlebar"><h3 id="cnn-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">준비 중</span></header>
+          <div class="widget-body"><div class="widget-placeholder__copy"><h3>해상도와 구조에 따른 연결 수 비교</h3><p>같은 해상도에서 MLP와 CNN의 파라미터가 어디에서 늘어나는지, 28×28에서 4K까지 해상도를 움직이며 나란히 비교할 예정입니다.</p></div></div>
+        </section>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>CNN 구조와 파라미터 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p2-3-mnist-cnn-q1" data-correct-feedback="정답입니다. 2×2 MaxPooling은 높이와 너비를 절반으로 줄여 28×28×32를 14×14×32로 만듭니다." data-wrong-feedback="필터의 개수 32는 유지되고, 공간 크기인 높이와 너비가 어떻게 바뀌는지 확인해 보세요.">
+            <span class="quiz__index">CHECK 01</span><h3>28×28×32 특성맵에 2×2 MaxPooling을 적용한 뒤 모양은 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">28×28×1</button><button class="quiz-option" type="button" data-answer="correct">14×14×32</button><button class="quiz-option" type="button" data-answer="wrong">6,272×128</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p2-3-mnist-cnn-q2" data-correct-feedback="정답입니다. 이 모델에서는 Flatten 뒤 6,272개 입력을 128개 뉴런과 연결하는 Dense 층이 802,944개를 차지합니다." data-wrong-feedback="model.summary 표에서 Conv2D의 320개와 Dense의 802,944개를 비교해 보세요.">
+            <span class="quiz__index">CHECK 02</span><h3>이 CNN에서 가장 많은 파라미터가 모인 곳은 어디일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">Conv2D의 3×3 필터</button><button class="quiz-option" type="button" data-answer="wrong">MaxPooling 층</button><button class="quiz-option" type="button" data-answer="correct">Flatten 뒤 Dense(128) 층</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

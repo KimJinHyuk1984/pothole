@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MNIST 숫자 데이터를 불러와 MLP를 설계하고 학습·평가하며 파라미터와 과적합을 읽는 코드 중심 수업">
+    <title>MNIST를 MLP로 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        window.Prism = { manual: true };
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p1-5-mnist-mlp">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 1 · MLP Practice</p>
+          <h1>MNIST를 MLP로</h1>
+          <p class="lede">28×28 손글씨 숫자를 784개의 값으로 펼치고, MLP가 0부터 9까지의 정답을 고르는 전 과정을 실제 노트북 코드로 따라갑니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 36–53</span><span>Notebook · mnist_MLP.ipynb</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">MNIST · S36–37</p>
+          <h2>6만 장으로 배우고, 1만 장으로 시험한다</h2>
+          <p>MNIST는 미국의 고등학생과 인구조사국 직원이 쓴 숫자를 모은 데이터셋입니다. 이미지 한 장은 28×28 흑백 픽셀이고, 각 픽셀은 0부터 255 사이의 값입니다.</p>
+        </div>
+        <div class="stat-grid">
+          <article class="stat-card"><span class="stat-card__value">60,000</span><strong>학습 이미지</strong><p>모델이 숫자의 모양을 배우는 문제입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">10,000</span><strong>테스트 이미지</strong><p>학습이 끝난 모델의 실제 성능을 확인합니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">28×28</span><strong>한 장의 크기</strong><p>784개의 픽셀값으로 이루어진 흑백 이미지입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">0–255</span><strong>픽셀 범위</strong><p>0은 검은색 배경, 255는 흰색 배경을 나타냅니다.</p></article>
+        </div>
+        <div class="action-grid flow-space">
+          <a class="action-link is-disabled" data-link-key="mnistWebApp" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">MNIST Web App</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>직접 쓴 숫자 테스트</h3><p>숫자를 4~5번 그려 보고 모델이 어떤 값으로 분류하는지 비교합니다.</p></span>
+          </a>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 01 / 09</p><h2>모듈 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 5">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">01_modules.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 각종 모듈 불러오기
+
+import os, random
+import numpy as np
+import tensorflow as tf
+import koreanize_matplotlib
+import matplotlib.pyplot as plt</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 학습과 그래프 작성에 필요한 모듈을 불러옵니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><ul><li><code>os, random</code>은 환경변수와 파이썬 난수를 다룹니다.</li><li><code>numpy</code>는 28×28 행렬의 수치 계산, <code>tensorflow</code>는 모델 정의·학습·평가를 맡습니다.</li><li><code>koreanize_matplotlib</code>과 <code>matplotlib.pyplot</code>은 한글이 포함된 정확도·손실 그래프를 그립니다.</li></ul></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 02 / 09</p><h2>랜덤 시드 고정</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 8">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">02_seed.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">SEED = 42
+os.environ['PYTHONHASHSEED'] = str(SEED)
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 파이썬, NumPy, TensorFlow의 무작위성을 함께 고정합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>신경망의 가중치는 무작위로 초기화되므로 같은 코드를 실행해도 결과가 조금씩 달라질 수 있습니다. 네 군데의 시드를 모두 고정해야 무작위성이 새어 나가지 않고 결과를 재현할 수 있습니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 03 / 09</p><h2>데이터 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 11">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">03_load_data.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">mnist = tf.keras.datasets.mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · TensorFlow에 내장된 MNIST를 학습용과 테스트용으로 나눠 받습니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p><code>x_train</code>은 60,000장의 이미지, <code>y_train</code>은 그 정답입니다. 테스트용은 10,000장입니다. 정답은 원-핫 벡터가 아니라 0~9의 정수이므로 뒤에서 <code>sparse_categorical_crossentropy</code>를 사용합니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 04 / 09</p><h2>0~255를 0~1로 정규화</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 14">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">04_normalize.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">x_train, x_test = x_train / 255.0, x_test / 255.0</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 모든 픽셀값을 255로 나눕니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>입력값의 범위를 줄이면 큰 값 때문에 학습이 불안정해지는 일을 막고, 경사하강법이 골짜기를 지나치지 않으며, 가중치가 한쪽 입력에 쏠리지 않도록 돕습니다.</p></div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall data-code-step-beat>
+        <div class="section-head"><p class="eyebrow">Code 05 / 09 · Steps</p><h2>Input에서 Softmax까지 층을 쌓는다</h2><p>코드 전문은 그대로 두고 단계 버튼이나 방향키로 현재 층의 역할만 차례로 확인합니다.</p></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 17" data-steps='[{"lines":"2","note":"Input은 모델에 28×28 크기의 흑백 이미지가 들어온다고 알려 줍니다."},{"lines":"3","note":"Flatten은 28×28의 2차원 이미지를 784개의 1차원 값으로 펼칩니다."},{"lines":"4","note":"Dense(128, relu)는 128개 뉴런으로 특징을 분석하고 음수 신호를 0으로 끕니다."},{"lines":"5","note":"Dense(10, softmax)는 숫자 0~9의 점수를 열 개 확률로 바꿉니다."}]'>
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">05_model.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model = tf.keras.models.Sequential([
+    tf.keras.Input(shape=(28, 28)),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])</code></pre></div>
+          <div class="code-note">첫 단계에서 Input → Flatten → Dense(128, relu) → Dense(10, softmax)를 따라갑니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p><code>Sequential</code>은 층을 순서대로 쌓는 구조입니다. MLP는 2차원 이미지를 직접 받을 수 없어 <code>Flatten</code>으로 784개 값으로 펼치고, 128개 은닉 뉴런을 지난 뒤 10개 출력 뉴런에서 숫자별 확률을 만듭니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 06 / 09</p><h2>학습 방법을 컴파일한다</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 28">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">06_compile.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · Adam, 정수 레이블용 손실함수, 정확도를 지정합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><ul><li><code>adam</code>은 보폭을 자동 조절하고 관성을 활용하는 최적화 도구입니다.</li><li><code>sparse_categorical_crossentropy</code>는 정답이 원-핫 인코딩되지 않은 정수인 분류 문제에 사용합니다.</li><li><code>accuracy</code>는 학습 중 사람이 직관적으로 확인할 정확도입니다.</li></ul></div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 07 / 09 · Parameters · S49</p><h2>작은 이미지인데 연결선이 10만 개</h2><p>Dense 층의 파라미터는 입력마다 모든 출력 뉴런으로 이어지는 가중치와 출력 뉴런마다 하나씩 있는 편향을 더해 계산합니다.</p></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 36">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">07_summary.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.summary()</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 설계한 각 층의 출력 모양과 파라미터 수를 표로 확인합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>Dense 층의 파라미터는 입력 뉴런 수 × 출력 뉴런 수 + 편향으로 계산합니다. <code>None</code>은 아직 정하지 않은 가변 배치 크기 자리입니다.</p></div>
+        <div class="split-layout split-layout--wide-media">
+          <div class="formula-stack">
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">Dense(128)</strong><span class="parameter-formula__equation"><span>784 × 128 + 128 =</span><b>100,480</b></span></p>
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">Dense(10)</strong><span class="parameter-formula__equation"><span>128 × 10 + 10 =</span><b>1,290</b></span></p>
+            <p class="formula parameter-formula"><strong class="parameter-formula__label">전체</strong><span class="parameter-formula__equation"><span>100,480 + 1,290 =</span><b>101,770</b></span></p>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-049-a.webp" width="720" height="354" loading="lazy" decoding="async" alt="MLP 모델 요약표에서 Flatten 출력 784, Dense 128의 파라미터 100,480, Dense 10의 파라미터 1,290, 전체 101,770을 보여 주는 실행 결과"></div>
+            <figcaption><strong>model.summary() 실행 결과</strong>파라미터 대부분이 784개 입력과 128개 은닉 뉴런을 잇는 첫 Dense 층에 모입니다.</figcaption>
+          </figure>
+        </div>
+        <p class="quote-block flow-space">4K 이미지라면 입력은 3,840×2,160 = 8,294,400개이고, 첫 Dense(128)만 1,061,683,328개의 파라미터가 필요합니다. 컬러 이미지라면 입력 채널까지 더 늘어납니다.</p>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 08 / 09</p><h2>30 epoch 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cell 40">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">08_train.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">history = model.fit(x_train, y_train,
+                    validation_split = 0.2,
+                    epochs = 30)</code></pre></div>
+          <div class="code-note">노트북 코드 원문 · 학습 데이터의 20%를 검증용으로 떼고 30번 반복합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>60,000장 중 48,000장은 학습, 12,000장은 검증에 사용됩니다. 기본 배치 크기 32이므로 실제 코드는 한 epoch에 1,500번, 30 epoch 동안 45,000번 가중치를 업데이트합니다. 모든 학습 기록은 <code>history.history</code>에 저장됩니다.</p></div>
+        <p class="source-warning flow-space"><strong>S50의 단순 계산:</strong> 슬라이드는 검증 분할 전 60,000장을 모두 세어 60,000 ÷ 32 = 1,875번, 30 epoch에서 56,250번으로 설명합니다. 실제 노트북 코드는 <code>validation_split = 0.2</code>가 있으므로 위의 45,000번 계산을 따릅니다.</p>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 09 / 09</p><h2>테스트하고 학습 곡선을 그린다</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_MLP.ipynb · cells 45, 47, 53, 55" data-collapse="22">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">09_evaluate_plot.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">print("\n========== 최종 테스트 결과 ==========")
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
+print(f"\n테스트 정확도: {test_acc * 100:.2f}%")
+
+def plot_history_subplot(history):
+    hist = history.history
+    epochs = np.arange(1, len(hist["loss"]) + 1)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))  # 가로 2개
+
+    # =========================
+    # (왼쪽) Accuracy
+    # =========================
+    ax = axes[0]
+    ax.plot(epochs, hist["accuracy"], linewidth=3, label="train acc")
+    if "val_accuracy" in hist:
+        ax.plot(epochs, hist["val_accuracy"], linewidth=3, label="val acc")
+
+    ax.set_title("Accuracy", fontsize=20, color="blue", pad=12)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Accuracy")
+    ax.set_ylim(-0.05, 1.05)
+    ax.legend()
+
+    # =========================
+    # (오른쪽) Loss (Error)
+    # =========================
+    ax = axes[1]
+    ax.plot(epochs, hist["loss"], linewidth=3, label="train loss")
+    if "val_loss" in hist:
+        ax.plot(epochs, hist["val_loss"], linewidth=3, label="val loss")
+
+    ax.set_title("Loss (Error)", fontsize=20, color="blue", pad=12)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+# 학습 후 호출
+plot_history_subplot(history)
+
+import pandas as pd
+
+df = pd.DataFrame(history.history)
+df.index = range(1, len(df) + 1)
+df.index.name = "Epoch"
+df = df.round(4)
+
+pd.set_option('display.max_rows', None)   # 모든 행 표시
+df
+
+best = df['val_loss'].idxmin()
+print(f"val_loss 최저: {best} epoch (val_loss={df.loc[best,'val_loss']:.4f})")
+print(f"→ 이후로 val_loss가 오르면 그때부터 과적합입니다")</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div>
+          <div class="code-note">노트북 코드 원문 · 최종 테스트, Accuracy/Loss 그래프, epoch별 표와 최저 val_loss를 확인합니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>테스트 데이터는 학습 중 한 번도 보지 않은 10,000장입니다. Validation은 학습 중 상태 확인과 조정에 쓰이지만 Test는 학습을 모두 마친 뒤 실제 성능을 재는 시험입니다. 그래프의 왼쪽은 train·validation 정확도, 오른쪽은 두 손실을 비교합니다.</p></div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Result · S51–53</p><h2>98.03%, 그러나 5 epoch 부근부터 과적합</h2><p>테스트 정확도만 보면 높지만, 학습 곡선을 함께 보면 훈련 데이터와 검증 데이터의 움직임이 갈라지는 시점을 읽을 수 있습니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-051-a.webp" width="925" height="143" loading="lazy" decoding="async" alt="MNIST MLP의 최종 테스트 정확도 98.03퍼센트와 손실 0.1583을 보여 주는 실행 결과"></div>
+            <figcaption><strong>최종 테스트</strong>처음 보는 테스트 이미지 10,000장에서 정확도 98.03%를 기록했습니다.</figcaption>
+          </figure>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-052-a.webp" width="1389" height="490" loading="lazy" decoding="async" alt="30 epoch 동안 MLP의 train과 validation 정확도 및 손실을 비교한 두 개의 학습 곡선, train loss는 계속 감소하지만 validation loss는 초반 이후 상승한다"></div>
+            <figcaption><strong>Accuracy와 Loss</strong>Train accuracy는 1.0에 가까워지고 train loss는 계속 줄지만, validation accuracy는 약 0.97에서 정체되고 validation loss는 다시 오릅니다.</figcaption>
+          </figure>
+        </div>
+        <aside class="note-teacher"><strong>교사용 메모 · S52~53</strong><p>5 epoch 부근에서 과적합이 일어나고 있다. 정확도보다 validation loss의 최소점과 이후 상승을 먼저 짚어 주세요.</p></aside>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Widget ⑥ · Placeholder</p><h2>해상도가 커지면 MLP 연결은 얼마나 늘어날까?</h2></div>
+        <section class="widget-shell widget-placeholder" aria-labelledby="mlp-param-widget-title">
+          <header class="widget-titlebar"><h3 id="mlp-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">준비 중</span></header>
+          <div class="widget-body"><div class="widget-placeholder__copy"><h3>28×28에서 4K까지 해상도 비교</h3><p>해상도 슬라이더를 움직이면 MLP의 첫 Dense 파라미터가 약 10만 개에서 10억 개 이상으로 늘어나는 모습을 CNN 값과 나란히 보여 줄 예정입니다.</p></div></div>
+        </section>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>코드와 그래프 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p1-5-mnist-mlp-q1" data-correct-feedback="정답입니다. Flatten은 28×28 이미지를 784개의 값으로 펼쳐 MLP가 받을 수 있게 합니다." data-wrong-feedback="MLP의 Dense 층에 들어가기 직전 이미지 모양이 어떻게 바뀌는지 다시 확인해 보세요.">
+            <span class="quiz__index">CHECK 01</span><h3><code>Flatten()</code>이 하는 일은 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">28×28 이미지를 784개의 1차원 값으로 펼친다</button><button class="quiz-option" type="button" data-answer="wrong">픽셀을 0~255 범위로 되돌린다</button><button class="quiz-option" type="button" data-answer="wrong">출력 확률을 가장 큰 숫자 하나로 바꾼다</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p1-5-mnist-mlp-q2" data-correct-feedback="정답입니다. train loss가 계속 줄어도 validation loss가 다시 오른다면 훈련 데이터를 외우는 과적합 신호입니다." data-wrong-feedback="훈련 데이터와 검증 데이터의 손실이 서로 다른 방향으로 움직이는 구간을 살펴보세요.">
+            <span class="quiz__index">CHECK 02</span><h3>과적합이 시작되었다고 판단할 수 있는 신호는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">train loss와 validation loss가 함께 감소한다</button><button class="quiz-option" type="button" data-answer="correct">train loss는 감소하지만 validation loss는 다시 상승한다</button><button class="quiz-option" type="button" data-answer="wrong">테스트 이미지가 10,000장이라는 사실</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

@@ -7,6 +7,7 @@
     <title>Component Test Track — 포트홀 CNN</title>
     <script>
       (() => {
+        window.Prism = { manual: true };
         const saved = localStorage.getItem("pothole:theme");
         const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
         document.documentElement.dataset.theme = saved || preferred;
@@ -21,6 +22,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/present.css">
     <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/codeblock.js"></script>
     <script type="module" src="js/present.js"></script>
   </head>
   <body>
@@ -392,47 +394,6 @@ plot_history_subplot(history)</code></pre>
           syncThemeButton();
         });
         syncThemeButton();
-
-        const copyText = async (text) => {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-            return;
-          }
-          const area = document.createElement("textarea");
-          area.value = text;
-          area.setAttribute("readonly", "");
-          area.style.position = "fixed";
-          area.style.opacity = "0";
-          document.body.append(area);
-          area.select();
-          document.execCommand("copy");
-          area.remove();
-        };
-
-        document.querySelectorAll(".code").forEach((figure) => {
-          const copyButton = figure.querySelector(".btn-copy");
-          const code = figure.querySelector("code");
-          copyButton.addEventListener("click", async () => {
-            try {
-              await copyText(code.textContent);
-              copyButton.textContent = "복사됨";
-            } catch {
-              copyButton.textContent = "다시 시도";
-            }
-            window.setTimeout(() => { copyButton.textContent = "복사"; }, 1400);
-          });
-
-          const collapseAt = Number(figure.dataset.collapse);
-          const toggle = figure.querySelector(".code-toggle");
-          if (collapseAt && toggle) {
-            figure.style.setProperty("--collapse-height", `${collapseAt * 1.75}em`);
-            toggle.addEventListener("click", () => {
-              const collapsed = figure.classList.toggle("is-collapsed");
-              toggle.setAttribute("aria-expanded", String(!collapsed));
-              toggle.textContent = collapsed ? "전체 보기" : "접기";
-            });
-          }
-        });
 
         document.querySelectorAll("[data-quiz]").forEach((quiz) => {
           const storageKey = `pothole:quiz:${quiz.dataset.quiz}`;
