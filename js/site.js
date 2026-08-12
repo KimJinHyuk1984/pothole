@@ -72,7 +72,6 @@ function renderCurriculum(nav, visited) {
   const root = document.querySelector("[data-nav-tree]");
   if (!root) return;
 
-  const partById = new Map(nav.parts.map((part) => [part.id, part]));
   const pagesByPart = new Map(nav.parts.map((part) => [part.id, []]));
 
   nav.pages.forEach((page) => {
@@ -142,7 +141,49 @@ function renderCurriculum(nav, visited) {
     total.textContent = `${nav.course.totalPages} pages`;
   });
 
-  document.dispatchEvent(new CustomEvent("pothole:navready", { detail: { nav, partById } }));
+}
+
+function renderPageNavigation(nav) {
+  const root = document.querySelector("[data-page-nav]");
+  const current = nav.pages.find((page) => page.slug === currentSlug);
+  if (!current) return;
+
+  document.querySelectorAll("[data-page-number]").forEach((element) => {
+    element.textContent = `${String(current.index).padStart(2, "0")} / ${String(nav.course.totalPages).padStart(2, "0")}`;
+  });
+
+  if (!root) return;
+
+  const currentPosition = nav.pages.indexOf(current);
+  const previous = nav.pages[currentPosition - 1];
+  const next = nav.pages[currentPosition + 1];
+  const part = nav.parts.find((item) => item.id === current.part);
+
+  const makeNavLink = (page, direction) => {
+    if (!page) {
+      const empty = makeElement("span", `page-nav__link page-nav__link--${direction} is-disabled`, "마지막 페이지");
+      empty.setAttribute("aria-hidden", "true");
+      return empty;
+    }
+
+    const link = makeElement("a", `page-nav__link page-nav__link--${direction}`);
+    link.href = page.href;
+    link.rel = direction === "previous" ? "prev" : "next";
+    const label = makeElement("span", "page-nav__label", direction === "previous" ? "← 이전" : "다음 →");
+    const title = makeElement("strong", "page-nav__title", page.title);
+    link.append(label, title);
+    return link;
+  };
+
+  const status = makeElement("p", "page-nav__status");
+  status.append(
+    makeElement("span", "page-nav__position", `${String(current.index).padStart(2, "0")} / ${String(nav.course.totalPages).padStart(2, "0")}`),
+    makeElement("strong", "page-nav__current", current.title),
+    makeElement("span", "page-nav__part", part ? `PART ${String(part.id).padStart(2, "0")}` : "COURSE HOME"),
+  );
+
+  root.replaceChildren(makeNavLink(previous, "previous"), status, makeNavLink(next, "next"));
+  root.removeAttribute("aria-busy");
 }
 
 function renderLinkCards(links) {
@@ -179,6 +220,49 @@ function showLoadError(selector, message) {
   target.replaceChildren(makeElement("p", "load-error", message));
 }
 
+function setupQuizzes() {
+  document.querySelectorAll("[data-quiz]").forEach((quiz) => {
+    const options = [...quiz.querySelectorAll(".quiz-option")];
+    const feedback = quiz.querySelector(".quiz__feedback");
+    if (!options.length || !feedback) return;
+
+    const storageKey = `pothole:quiz:${quiz.dataset.quiz}`;
+    const selectAnswer = (selectedIndex, persist = true) => {
+      const selected = options[selectedIndex];
+      if (!selected) return;
+      const correct = selected.dataset.answer === "correct";
+
+      options.forEach((option, index) => {
+        option.classList.toggle("is-correct", option.dataset.answer === "correct");
+        option.classList.toggle("is-wrong", index === selectedIndex && !correct);
+        option.disabled = true;
+      });
+
+      feedback.dataset.state = correct ? "correct" : "wrong";
+      feedback.textContent = correct ? quiz.dataset.correctFeedback : quiz.dataset.wrongFeedback;
+
+      if (persist) {
+        try {
+          localStorage.setItem(storageKey, String(selectedIndex));
+        } catch {
+          // 저장 공간이 차단되어도 현재 퀴즈 피드백은 유지한다.
+        }
+      }
+    };
+
+    options.forEach((option, index) => {
+      option.addEventListener("click", () => selectAnswer(index));
+    });
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) selectAnswer(Number(saved), false);
+    } catch {
+      // 저장된 답을 읽을 수 없는 환경에서는 새 문제로 시작한다.
+    }
+  });
+}
+
 async function loadHomeData(visited) {
   const navUrl = new URL("../data/nav.json", import.meta.url);
   const linksUrl = new URL("../data/links.json", import.meta.url);
@@ -195,10 +279,13 @@ async function loadHomeData(visited) {
   ]);
 
   if (navResult.status === "fulfilled") {
+    renderPageNavigation(navResult.value);
     renderCurriculum(navResult.value, visited);
+    document.dispatchEvent(new CustomEvent("pothole:navready", { detail: { nav: navResult.value } }));
   } else {
     console.error(navResult.reason);
     showLoadError("[data-nav-tree]", "목차를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    showLoadError("[data-page-nav]", "이전·다음 페이지를 불러오지 못했습니다.");
   }
 
   if (linksResult.status === "fulfilled") {
@@ -211,4 +298,5 @@ async function loadHomeData(visited) {
 
 const visited = recordVisit(currentSlug);
 setupThemeToggle();
+setupQuizzes();
 loadHomeData(visited);

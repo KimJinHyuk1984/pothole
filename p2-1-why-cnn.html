@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MLP의 이미지 처리 한계를 비교하고 CNN의 특징 추출, 분류, Flatten, 3차원 입력 구조를 이해하는 수업">
+    <title>왜 CNN인가 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p2-1-why-cnn">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 2 · Visual Intelligence</p>
+          <h1>왜 CNN인가</h1>
+          <p class="lede">MLP는 그림을 한 줄로 펴면서 위치와 모양의 관계를 잃습니다. CNN은 작은 영역을 훑으며 주변 픽셀의 패턴을 찾고, 이미지의 공간 구조를 더 오래 보존합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 58–64</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">The Birth of CNN · S59</p>
+          <h2>이미지를 훑어 특징을 찾는 AI</h2>
+          <p>복잡한 그림 전체를 한꺼번에 보는 대신 작은 ‘필터’가 그림 위를 훑으며 특정 모양과 패턴을 찾습니다. 이 계산이 합성곱(Convolution)입니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-059-a.webp" width="1024" height="559" loading="lazy" decoding="async" alt="윌리를 찾아라 그림을 돋보기로 훑듯 CNN 필터가 이미지의 작은 영역을 스캔해 특징을 찾는 4칸 만화"></div>
+          <figcaption><strong>윌리를 찾는 작은 돋보기</strong>필터는 이미지의 작은 영역을 차례로 훑고, 찾으려는 특징이 강한 위치를 특성맵에 남깁니다.</figcaption>
+        </figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">MLP vs CNN · S60</p>
+          <h2>이미지를 보는 방식이 다르다</h2>
+          <p>원본 비교표의 네 항목처럼 MLP는 픽셀을 낱개 숫자로 보고, CNN은 주변 픽셀이 만드는 모양과 위치 관계를 봅니다.</p>
+        </div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="MLP와 CNN 비교표">
+          <table class="data-table">
+            <caption>Original comparison · Slide 60</caption>
+            <thead><tr><th scope="col">구분</th><th scope="col">MLP</th><th scope="col">CNN</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">보는 방식</th><td>그림을 잘라서 한 줄로 폄</td><td>그림 모양 그대로 봄</td></tr>
+              <tr><th scope="row">정보 처리</th><td>픽셀 하나하나의 값만 봄</td><td>픽셀 주변의 패턴(모양)을 봄</td></tr>
+              <tr><th scope="row">특징</th><td>위치가 조금만 바뀌어도 못 알아봄</td><td>위치가 바뀌어도 잘 알아봄</td></tr>
+              <tr><th scope="row">비유</th><td>난도질된 퍼즐 조각</td><td>손전등으로 훑어 보기</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote class="quote-block flow-space">MLP는 글자나 숫자를 분석하는 데는 천재이지만, 그림을 볼 때는 융통성이 없는 샌님입니다. 그래서 그림의 모양과 패턴을 사람처럼 알아보는 시각 전문 AI인 CNN이 탄생했습니다.</blockquote>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Feature Extraction · S61</p>
+          <h2>특징을 찾아내는 눈</h2>
+          <p>CNN 앞부분은 이미지를 돋보기로 훑어 가며 “어떤 모양이 있는지” 핵심 정보를 뽑아냅니다.</p>
+        </div>
+        <div class="split-layout split-layout--wide-media">
+          <div class="prose-stack">
+            <article class="analogy" data-icon="🔎">
+              <h3>배 사진에서 단서 찾기</h3>
+              <p>사람의 눈처럼 배(Boat) 사진을 보면서 “물결이 있네?”라고 단서(feature)를 찾는 과정입니다.</p>
+            </article>
+            <p>도해에서 그림이 점점 작아지는 것은 불필요한 배경을 버리고 알짜배기 핵심 정보를 압축한다는 뜻입니다.</p>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-061-a.webp" width="1503" height="345" loading="lazy" decoding="async" alt="배 사진에서 합성곱과 풀링을 반복하며 특징맵이 작아지고 마지막에 분류 결과로 이어지는 CNN 구조"></div>
+            <figcaption><strong>Feature Extraction</strong>합성곱과 풀링을 거치며 핵심 특징은 남고 공간 크기는 줄어듭니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Classification · S62</p>
+          <h2>정답을 맞추는 뇌</h2>
+          <p>뒷부분은 앞에서 찾아낸 단서들을 모아 “그래서 이게 뭐야?”라고 판단합니다. Fully Connected 층은 곧 MLP입니다.</p>
+        </div>
+        <div class="pipeline" role="group" aria-label="CNN의 특징 추출부터 분류까지 흐름">
+          <article class="pipeline__stage"><span class="pipeline__label">CNN · Eye</span><h3>단서 찾기</h3><p>물결, 윤곽선, 질감처럼 이미지 안의 특징을 찾습니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">Flatten</span><h3>단서 펼치기</h3><p>눈이 찾은 단서들을 판별하기 쉬운 한 줄 체크리스트로 바꿉니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">MLP · Brain</span><h3>정답 판단</h3><p>“이런 모양이 있는 걸 보니 이건 배야!”라고 결론을 내립니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Why Flatten Again? · S63</p>
+          <h2>마지막에는 왜 다시 펼칠까?</h2>
+          <p>마지막 Flatten은 그림을 망가뜨리는 과정이 아니라 ‘공간 정보’를 판결에 필요한 ‘의미 정보’, 즉 체크리스트로 바꾸는 과정입니다.</p>
+        </div>
+        <div class="split-layout">
+          <div class="prose-stack">
+            <p class="quote-block">눈이 얼굴 왼쪽 끝에 있든 오른쪽 끝에 있든 ‘눈이 있다’는 사실이 리스트에 적히면, AI는 “이건 사람 얼굴이네”라고 판단할 수 있습니다.</p>
+            <aside class="note-teacher">
+              <p>마지막에 펴는 건 그림을 망가뜨리는 게 아니라 ‘공간 정보’를 ‘의미 정보(체크리스트)’로 바꾸는 과정이라고 강조한다. 위치 지도는 사라지지만 판결에 필요한 단서 목록은 남는다.</p>
+            </aside>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-063-a.webp" width="1600" height="873" loading="lazy" decoding="async" alt="MLP가 범죄 현장의 위치 정보를 잃는 모습과 CNN이 위치를 유지해 특징을 찾은 뒤 체크리스트로 판사에게 전달하는 비교 만화"></div>
+            <figcaption><strong>위치 지도에서 증거 체크리스트로</strong>CNN 탐정이 공간에서 단서를 찾고, 최종 MLP가 단서 목록으로 분류합니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Input Layer · S64</p>
+          <h2>CNN은 그림을 입체로 본다</h2>
+          <p>입력층은 이미지 데이터가 최초로 거치는 계층입니다. 단순한 1차원이 아니라 높이·너비·채널을 가진 3차원 데이터로 받습니다.</p>
+        </div>
+        <div class="split-layout">
+          <div class="prose-stack">
+            <div class="stat-grid">
+              <article class="stat-card"><span class="stat-card__value">28 × 28 × 1</span><strong>MNIST 흑백 이미지</strong><p>높이 28, 너비 28, 밝기 채널 1개입니다.</p></article>
+              <article class="stat-card"><span class="stat-card__value">3840 × 2160 × 3</span><strong>컬러 4K 이미지</strong><p>높이와 너비에 빨강·초록·파랑 채널 3개가 쌓입니다.</p></article>
+            </div>
+            <aside class="note-teacher">
+              <p>MNIST는 두께가 1인 아주 얇은 피자 박스, 컬러 사진은 R·G·B가 쌓인 두께 3의 피자 박스라고 설명한다. CNN은 이 박스를 납작하게 펴지 않고 그대로 다음 단계로 넘긴다.</p>
+            </aside>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-064-a.webp" width="1600" height="873" loading="lazy" decoding="async" alt="3840×2160 컬러 이미지를 같은 크기의 빨강, 초록, 파랑 채널 세 장으로 분리해 3840×2160×3 입력 텐서로 표현한 도해"></div>
+            <figcaption><strong>높이 × 너비 × 채널</strong>컬러 이미지는 같은 위치의 R·G·B 값이 세 겹으로 쌓인 입력 텐서입니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>CNN의 역할 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p2-1-why-cnn-q1" data-correct-feedback="정답입니다. CNN은 주변 픽셀이 만드는 모양과 패턴을 보존하며 특징을 찾습니다." data-wrong-feedback="MLP는 그림을 한 줄로 펴 픽셀을 낱개 값으로 봅니다. CNN이 무엇을 다르게 보는지 표를 다시 확인해 보세요.">
+            <span class="quiz__index">CHECK 01</span><h3>이미지를 처리할 때 CNN이 MLP와 가장 다르게 보는 것은 무엇일까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="wrong">픽셀의 전체 개수만 본다</button>
+              <button class="quiz-option" type="button" data-answer="correct">주변 픽셀이 만드는 패턴과 모양을 본다</button>
+              <button class="quiz-option" type="button" data-answer="wrong">이미지의 파일 이름을 본다</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p2-1-why-cnn-q2" data-correct-feedback="정답입니다. 28×28은 높이와 너비, 마지막 1은 흑백 밝기 채널의 수입니다." data-wrong-feedback="CNN 입력의 세 숫자는 높이, 너비, 채널을 뜻합니다. 흑백 이미지는 채널이 하나입니다.">
+            <span class="quiz__index">CHECK 02</span><h3>MNIST 흑백 이미지의 입력 모양 (28, 28, 1)에서 마지막 1은 무엇을 뜻할까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="wrong">정답 클래스가 한 개라는 뜻</button>
+              <button class="quiz-option" type="button" data-answer="correct">밝기 채널이 한 개라는 뜻</button>
+              <button class="quiz-option" type="button" data-answer="wrong">이미지가 한 장뿐이라는 뜻</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

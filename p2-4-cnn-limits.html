@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MNIST 숫자를 5픽셀 이동한 실험으로 CNN의 위치 변화 한계와 Flatten, MaxPooling의 영향을 이해하는 수업">
+    <title>CNN도 못 넘은 벽 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p2-4-cnn-limits">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 2 · CNN Limits</p>
+          <h1>CNN도 못 넘은 벽</h1>
+          <p class="lede">CNN은 MLP보다 이미지의 패턴과 위치 변화에 강하지만 완전히 자유로운 것은 아닙니다. 숫자를 오른쪽과 아래로 5칸 옮기자 익숙했던 ‘7’을 틀리게 읽었습니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 83–86</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Shift Test · S83–84</p>
+          <h2>MLP의 한계를 극복했을까?</h2>
+          <p>과적합을 막기 위해 CNN을 5번만 학습한 뒤, 테스트 이미지의 숫자 7을 오른쪽 5칸·아래 5칸 이동해 다시 예측했습니다.</p>
+        </div>
+        <div class="split-layout">
+          <div class="prose-stack">
+            <div class="stat-grid">
+              <article class="stat-card"><span class="stat-card__value">dx = 5</span><strong>오른쪽 이동</strong><p>모든 픽셀을 원래 위치보다 오른쪽으로 5칸 옮겼습니다.</p></article>
+              <article class="stat-card"><span class="stat-card__value">dy = 5</span><strong>아래 이동</strong><p>같은 숫자를 아래쪽으로도 5칸 옮겼습니다.</p></article>
+            </div>
+            <p class="quote-block">사람에게는 똑같은 7이지만, 모델에게는 특징이 나타난 좌표가 크게 달라진 새로운 입력입니다.</p>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-084-b.webp" width="742" height="340" loading="lazy" decoding="async" alt="원래 중앙에 있던 MNIST 숫자 7과 오른쪽 5픽셀, 아래 5픽셀 이동한 숫자 7의 비교"></div>
+            <figcaption><strong>Original vs Shifted</strong>숫자의 모양은 같지만 밝은 픽셀이 놓인 위치가 오른쪽 아래로 이동했습니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Prediction Result · S85</p>
+          <h2>실제 정답 7, 모델 예측 5</h2>
+          <p>CNN도 이동한 숫자를 정확히 알아보지 못했습니다. MLP보다는 위치 변화에 강하지만, 5픽셀이라는 큰 이동까지 자동으로 해결하지는 못했습니다.</p>
+        </div>
+        <div class="split-layout">
+          <div class="stat-grid">
+            <article class="stat-card"><span class="stat-card__value">7</span><strong>실제 정답</strong><p>사람이 보면 이동 전과 같은 숫자 7입니다.</p></article>
+            <article class="stat-card"><span class="stat-card__value">5</span><strong>모델 예측</strong><p>학습할 때 자주 보지 못한 위치라 다른 숫자로 분류했습니다.</p></article>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-085-a.webp" width="496" height="659" loading="lazy" decoding="async" alt="오른쪽 아래로 이동한 숫자 7을 CNN이 숫자 5로 잘못 예측한 결과 화면"></div>
+            <figcaption><strong>오분류 결과</strong>실제 정답은 7이지만 모델은 5라고 예측했습니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Two Causes · S86</p>
+          <h2>왜 위치가 바뀌면 헷갈릴까?</h2>
+          <p>Conv와 Pooling 층은 특징을 잘 찾았지만, 마지막 분류 과정과 풀링이 감당할 수 있는 이동 범위에는 한계가 있었습니다.</p>
+        </div>
+        <div class="component-grid">
+          <article class="concept-card" data-tone="warning">
+            <span class="quiz__index">CAUSE 01</span>
+            <h3>Flatten 뒤 Dense는 위치를 외운다</h3>
+            <p>Conv와 Pooling 층에서 특징을 찾은 뒤 Flatten으로 위치 정보를 한 줄로 펼칩니다. 마지막 Dense 층은 “정중앙에 7이 있는 그림”을 학습했기 때문에 오른쪽 아래의 7은 처음 보는 상황이 됩니다.</p>
+          </article>
+          <article class="concept-card" data-tone="warning">
+            <span class="quiz__index">CAUSE 02</span>
+            <h3>MaxPooling의 범위는 작다</h3>
+            <p>MaxPooling(2, 2)는 기껏해야 1~2칸 정도의 미세한 떨림을 커버합니다. 5칸이나 이동하면 “내가 알던 데이터 위치가 아닌데?”라고 헷갈립니다.</p>
+          </article>
+        </div>
+        <p class="quote-block flow-space">따라서 모델은 다양한 위치와 모양의 데이터를 경험할 필요가 있습니다.</p>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Widget Placeholder</p>
+          <h2>같은 숫자를 직접 옮겨 보기</h2>
+        </div>
+        <section class="widget-shell widget-placeholder" aria-labelledby="shift-widget-title">
+          <header class="widget-titlebar"><h3 id="shift-widget-title">이동 실험 · MLP vs CNN</h3><span class="widget-tag">준비 중</span></header>
+          <div class="widget-body"><div class="widget-placeholder__copy"><h3>이동 거리와 예측 확률 비교</h3><p>숫자를 0~5칸 옮기면서 MLP와 CNN의 예측 확률이 각각 어떻게 무너지는지 나란히 확인하게 됩니다.</p></div></div>
+        </section>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>CNN의 한계 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p2-4-cnn-limits-q1" data-correct-feedback="정답입니다. MaxPooling(2, 2)는 작은 떨림에는 도움이 되지만 5픽셀의 큰 이동까지 보장하지 않습니다." data-wrong-feedback="CNN이 위치 변화에 더 강하다고 해서 모든 이동을 해결하는 것은 아닙니다. 원본의 1~2칸 범위를 다시 확인해 보세요.">
+            <span class="quiz__index">CHECK 01</span><h3>MaxPooling(2, 2)가 어느 정도 커버할 수 있다고 설명한 위치 변화는 얼마일까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="correct">1~2칸 정도의 미세한 떨림</button>
+              <button class="quiz-option" type="button" data-answer="wrong">항상 5칸 이상의 큰 이동</button>
+              <button class="quiz-option" type="button" data-answer="wrong">이미지 크기와 관계없이 모든 이동</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p2-4-cnn-limits-q2" data-correct-feedback="정답입니다. 다양한 위치의 데이터를 경험하게 하면 모델이 위치 변화에 덜 당황합니다." data-wrong-feedback="Dense 층을 더 크게 만드는 것만으로 처음 보는 위치 문제가 해결되지는 않습니다. 데이터 경험을 넓히는 방법이 필요합니다.">
+            <span class="quiz__index">CHECK 02</span><h3>이동한 숫자를 모델이 더 잘 알아보게 하려면 무엇이 필요할까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="wrong">정중앙 이미지로만 더 오래 학습하기</button>
+              <button class="quiz-option" type="button" data-answer="correct">다양한 위치와 모양의 데이터를 경험시키기</button>
+              <button class="quiz-option" type="button" data-answer="wrong">입력 이미지를 무조건 한 줄로 먼저 펴기</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

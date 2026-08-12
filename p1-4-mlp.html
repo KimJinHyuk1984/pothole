@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MLP의 입력층, 은닉층, 출력층과 과소적합·과적합, Early Stopping, Dropout을 이해하는 수업">
+    <title>MLP와 과적합 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p1-4-mlp">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 1 · Multi Layer Perception</p>
+          <h1>MLP와 과적합</h1>
+          <p class="lede">층을 깊고 넓게 만들면 더 복잡한 패턴을 배울 가능성이 커집니다. 하지만 답을 외워 버리는 순간, 새로운 문제를 푸는 힘은 오히려 약해집니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 32–35</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">MLP Structure · S32</p>
+          <h2>입력하고, 분석하고, 답한다</h2>
+          <p>다층 퍼셉트론(Multi Layer Perception, MLP)은 입력층·은닉층·출력층을 차례로 통과하며 데이터를 답으로 바꿉니다.</p>
+        </div>
+        <div class="layer-flow" role="group" aria-label="입력층에서 은닉층을 거쳐 출력층으로 흐르는 MLP 구조">
+          <article class="layer-card">
+            <span class="layer-card__en">Input Layer</span><h3>입력층</h3>
+            <span class="layer-nodes" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <p>문제를 이루는 숫자와 픽셀 값을 받아들입니다.</p>
+          </article>
+          <article class="layer-card">
+            <span class="layer-card__en">Hidden Layer</span><h3>은닉층</h3>
+            <span class="layer-nodes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+            <p>가중치와 활성화 함수로 데이터의 패턴을 분석합니다.</p>
+          </article>
+          <article class="layer-card">
+            <span class="layer-card__en">Output Layer</span><h3>출력층</h3>
+            <span class="layer-nodes" aria-hidden="true"><i></i><i></i><i></i></span>
+            <p>분석 결과를 우리가 원하는 정답 형태로 내보냅니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Bigger Is Better? · S33–34</p>
+          <h2>층과 유닛은 많을수록 좋을까?</h2>
+          <p>더 깊고 넓으면 표현력, 즉 표현 가능한 함수의 복잡도가 증가합니다. 복잡한 패턴을 학습할 ‘가능성’은 커지지만 반드시 더 좋은 모델이 되는 것은 아닙니다.</p>
+        </div>
+        <div class="concept-grid">
+          <article class="concept-card" data-tone="accent">
+            <h3>표현력 증가</h3><p>깊고 넓은 모델은 단순한 모델보다 복잡한 패턴을 표현할 가능성이 큽니다.</p>
+          </article>
+          <article class="concept-card" data-tone="warning">
+            <h3>과적합 위험 증가</h3><p>모델이 너무 크면 훈련 데이터의 잡음과 우연까지 외웁니다. 훈련 정확도는 높아도 검증·테스트 성능은 떨어질 수 있습니다.</p>
+          </article>
+          <article class="concept-card" data-tone="warning">
+            <h3>학습 불안정</h3><p>파라미터가 많아지면 최적화가 어려워지고, 학습이 느려지거나 특정 설정에서 수렴이 더 까다로울 수 있습니다.</p>
+          </article>
+          <article class="concept-card" data-tone="warning">
+            <h3>계산 비용 증가</h3><p>속도와 메모리 부담이 커져 여러 설정을 반복해서 실험하기가 어려워집니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Underfit vs Overfit · S33</p>
+          <h2>못 배운 모델과 외워 버린 모델</h2>
+        </div>
+        <div class="split-layout">
+          <div class="concept-grid">
+            <article class="concept-card">
+              <h3>과소적합</h3><p>모델이 너무 단순해서 학습 데이터의 규칙조차 충분히 배우지 못한 상태입니다.</p>
+            </article>
+            <article class="concept-card" data-tone="warning">
+              <h3>과적합</h3><p>학습 데이터를 과하게 암기해 버려서 새로운 데이터를 제대로 풀지 못하는 상태입니다.</p>
+            </article>
+          </div>
+          <figure class="lesson-media">
+            <div class="lesson-media__stage"><img src="assets/slide-033-a.webp" width="863" height="473" loading="lazy" decoding="async" alt="훈련 손실은 계속 낮아지지만 어느 지점부터 테스트 손실은 다시 높아지는 과적합 그래프"></div>
+            <figcaption><strong>훈련 손실과 테스트 손실</strong>훈련 손실이 계속 낮아져도 테스트 손실이 다시 커지는 지점부터 과적합이 시작됩니다.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">How to Train · S35</p>
+          <h2>작게 시작하고, 필요할 때 늘린다</h2>
+          <p>작은 모델로 시작해 먼저 유닛 수를 조금 늘리고, 그래도 부족하면 은닉층 수를 늘립니다. 이때 Early Stopping과 Dropout 같은 과적합 방지 장치를 함께 적용합니다.</p>
+        </div>
+        <div class="component-grid">
+          <article class="analogy" data-icon="⏱">
+            <h3>Early Stopping · 답만 외우기 전에 멈추기</h3>
+            <p>중간중간 보는 모의고사인 검증 성능이 좋아질 때는 학습을 계속합니다. 검증 오차가 다시 커지려는 순간에는 “답만 외우고 있으니 멈춰!”라고 판단해 학습을 강제로 종료합니다.</p>
+          </article>
+          <article class="analogy" data-icon="🏀">
+            <h3>Dropout · 주전 선수를 빼고 훈련하기</h3>
+            <p>특정 뉴런만 의존하지 않도록 학습할 때마다 뉴런 일부를 무작위로 꺼 버립니다. 남은 뉴런들이 힘을 합쳐 문제를 풀면서 한 선수에게만 기대는 과적합을 줄입니다.</p>
+          </article>
+        </div>
+        <div class="pipeline flow-space" role="group" aria-label="모델 크기를 조절하는 권장 순서">
+          <article class="pipeline__stage"><span class="pipeline__label">Step 01</span><h3>작은 모델</h3><p>필요한 규칙을 배울 수 있는 최소 구조에서 출발합니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">Step 02</span><h3>유닛 증가</h3><p>표현력이 부족하다면 먼저 각 층의 유닛을 조금 늘립니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">Step 03</span><h3>은닉층 증가</h3><p>더 복잡한 패턴이 필요할 때 층을 늘리고 과적합 방지 장치를 적용합니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>모델의 크기와 일반화 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p1-4-mlp-q1" data-correct-feedback="정답입니다. 훈련 데이터의 잡음과 우연까지 외우면 새로운 데이터에 일반화하기 어렵습니다." data-wrong-feedback="훈련 정확도만 높다고 좋은 모델은 아닙니다. 검증·테스트 데이터에서의 성능을 함께 봐야 합니다.">
+            <span class="quiz__index">CHECK 01</span><h3>훈련 정확도는 매우 높은데 새로운 테스트 데이터의 성능이 낮다면 어떤 상태일까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="wrong">과소적합</button>
+              <button class="quiz-option" type="button" data-answer="correct">과적합</button>
+              <button class="quiz-option" type="button" data-answer="wrong">데이터 증강</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p1-4-mlp-q2" data-correct-feedback="정답입니다. Dropout은 학습할 때 일부 뉴런을 무작위로 꺼 특정 뉴런에 대한 의존을 줄입니다." data-wrong-feedback="검증 오차가 커질 때 학습을 멈추는 것은 Early Stopping입니다. 뉴런을 무작위로 끄는 방법을 찾아보세요.">
+            <span class="quiz__index">CHECK 02</span><h3>학습할 때마다 일부 뉴런을 무작위로 꺼서 남은 뉴런들이 함께 학습하게 하는 방법은 무엇일까요?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" type="button" data-answer="wrong">Early Stopping</button>
+              <button class="quiz-option" type="button" data-answer="correct">Dropout</button>
+              <button class="quiz-option" type="button" data-answer="wrong">Flatten</button>
+            </div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>
