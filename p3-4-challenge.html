@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CoMNIST 캐글 챌린지와 선생님의 데이터 증강·CNN 블록 전략, 최종 모델 코드를 살펴보는 수업">
+    <title>CoMNIST 챌린지 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p3-4-challenge">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 3 · CoMNIST</p>
+          <h1>CoMNIST 챌린지</h1>
+          <p class="lede">Baseline을 그대로 제출하는 데서 멈추지 않고, 알파벳의 모양과 데이터 특성을 근거로 전략을 세워 Final score를 끌어올립니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 140–144</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Challenge · S140</p>
+          <h2>26개 알파벳을 직접 시험한다</h2>
+          <p>학습한 모델을 선택하고 캔버스에 알파벳을 그려, 26개 클래스 중 어떤 글자로 예측하는지 확인합니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-140-a.webp" width="1159" height="752" loading="lazy" decoding="async" alt="여러 CoMNIST 모델 중 final.keras를 고르고 검은 캔버스에 알파벳을 그려 예측하는 테스트 웹앱 화면"></div>
+          <figcaption><strong>CoMNIST 알파벳 테스트 웹앱</strong>Baseline과 여러 실험 모델, Final 모델을 같은 입력으로 비교할 수 있습니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Submit · S141</p>
+          <h2>결과 파일과 전략을 제출한다</h2>
+          <p>Baseline 코드에서 만든 <code>submission.csv</code>를 캐글에 업로드하고, 어떤 전략으로 코드를 작성했는지 설문에 기록합니다.</p>
+        </div>
+        <div class="action-grid">
+          <a class="action-link is-disabled" data-link-key="kaggleComnist" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">Kaggle · CoMNIST</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>submission.csv 제출</h3><p>예측 결과 파일을 업로드해 Public score와 Final score를 확인합니다.</p></span>
+          </a>
+          <a class="action-link is-disabled" data-link-key="strategyForm" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">Strategy Survey</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>나의 전략 기록</h3><p>Baseline에서 무엇을 왜 바꾸었는지 근거와 결과를 설문에 남깁니다.</p></span>
+          </a>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall id="strategy">
+        <div class="section-head">
+          <p class="eyebrow">Teacher’s Strategy · S142–143</p>
+          <h2>데이터를 글자답게 바꾸는 세 가지 선택</h2>
+          <p>슬라이드의 Translation 5%, Rotation 0.05, Block 1~5 전략이 최종 제출 모델의 정본입니다. 알파벳의 의미가 유지되는 범위와 MaxPooling이 실제로 가져갈 값을 함께 고려합니다.</p>
+        </div>
+        <div class="strategy-grid">
+          <article class="strategy-card">
+            <span class="strategy-card__value">5%</span><h3>RandomTranslation</h3>
+            <p>글자가 중앙에서 조금 벗어나도 알아보도록 무작위 이동을 5%로 설정합니다.</p>
+          </article>
+          <article class="strategy-card">
+            <span class="strategy-card__value">0 ↔ 1</span><h3>흑백 반전</h3>
+            <p>기존 전처리는 흰 배경 1.0, 검은 글씨 0.0입니다. MaxPooling이 쓸모없는 큰 배경값을 고르지 않도록 흰 글씨 1.0, 검은 배경 0.0으로 뒤집습니다.</p>
+          </article>
+          <article class="strategy-card">
+            <span class="strategy-card__value">0.05</span><h3>RandomRotation</h3>
+            <p>회전을 크게 하면 Z가 N처럼 보일 수 있으므로, 데이터 증강의 Rotation을 0.05로 제한합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall id="blocks">
+        <div class="section-head">
+          <p class="eyebrow">Block 1–5 · S142</p>
+          <h2>채널을 늘리며 특징을 깊게 쌓는다</h2>
+          <p>모든 합성곱 커널은 3×3을 사용하고, Batch Normalization(BN)과 ReLU 뒤에 MaxPooling을 배치합니다. Block 1만 합성곱을 두 번 사용합니다.</p>
+        </div>
+        <div class="block-grid" role="group" aria-label="선생님의 CoMNIST Block 1부터 5까지 구조">
+          <article class="network-block"><span class="network-block__index">BLOCK 01</span><span class="network-block__channels">64 channel</span><p>3×3 · BN · ReLU<br>3×3 · BN · ReLU<br>MaxPooling</p></article>
+          <article class="network-block"><span class="network-block__index">BLOCK 02</span><span class="network-block__channels">128 channel</span><p>3×3 · BN · ReLU<br>MaxPooling</p></article>
+          <article class="network-block"><span class="network-block__index">BLOCK 03</span><span class="network-block__channels">256 channel</span><p>3×3 · BN · ReLU<br>MaxPooling</p></article>
+          <article class="network-block"><span class="network-block__index">BLOCK 04</span><span class="network-block__channels">512 channel</span><p>3×3 · BN · ReLU<br>MaxPooling</p></article>
+          <article class="network-block"><span class="network-block__index">BLOCK 05</span><span class="network-block__channels">1024 channel</span><p>3×3 · BN · ReLU<br>MaxPooling</p></article>
+        </div>
+        <div class="pipeline flow-space" role="group" aria-label="분류기 앞 구조">
+          <article class="pipeline__stage"><span class="pipeline__label">Feature Summary</span><h3>GlobalAveragePooling</h3><p>각 채널의 특징을 하나의 대표값으로 요약합니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">Regularization</span><h3>Dropout 0.4</h3><p>분류기가 특정 특징에 과하게 의존하지 않도록 일부 연결을 끕니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">Classifier</span><h3>Dense 512</h3><p>BN → ReLU → Dropout 0.4를 거쳐 26개 알파벳을 분류합니다.</p></article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall id="results">
+        <div class="section-head">
+          <p class="eyebrow">Baseline vs Final · S143</p>
+          <h2>더 작은 모델로 더 높은 점수</h2>
+          <p>Final 모델은 전체 파라미터 수를 줄이는 대신 더 오래 학습했고, 테스트 정확도와 캐글 점수를 함께 높였습니다.</p>
+        </div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="CoMNIST Baseline과 Final 결과 비교표, 가로로 스크롤 가능">
+          <table class="data-table" data-wide>
+            <caption>Original result table · Slide 143</caption>
+            <thead><tr><th scope="col">구분</th><th scope="col">전체 파라미터 수</th><th scope="col">Early stopping Epoch</th><th scope="col">학습 소요시간</th><th scope="col">Test_loss</th><th scope="col">Test_acc</th><th scope="col">Public score</th><th scope="col">Final score</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Baseline</th><td>39,024,410</td><td>28</td><td>00:01:43</td><td>0.7862</td><td>0.8080</td><td>0.78153</td><td>0.80345</td></tr>
+              <tr><th scope="row">Final</th><td>6,854,234</td><td>86</td><td>00:44:16</td><td>0.1158</td><td>0.9708</td><td>0.95968</td><td>0.96826</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="stat-grid flow-space">
+          <article class="stat-card"><span class="stat-card__value">0.80345</span><strong>Baseline Final score</strong><p>기본 모델로 얻은 캐글 최종 점수입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">0.96826</span><strong>Final Final score</strong><p>데이터와 구조 전략을 반영한 최종 점수입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">6,854,234</span><strong>Final parameters</strong><p>Baseline의 39,024,410개보다 적은 파라미터로 구성했습니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall id="final-code">
+        <div class="section-head">
+          <p class="eyebrow">Notebook Experiment · Last Cell</p>
+          <h2>실험 과정에 남은 마지막 모델 정의</h2>
+          <p>아래 마지막 셀은 실험 과정 중 하나로, 최종 제출 모델의 정본인 슬라이드 전략과 설정이 다릅니다. 두 자료를 합치거나 수치를 고치지 않고 노트북 셀을 그대로 옮겼습니다.</p>
+        </div>
+        <figure class="code" data-lang="python" data-file="comnist.ipynb · cell 21" data-collapse="28">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">comnist.ipynb · cell 21</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 클로드
+
+data_aug = tf.keras.Sequential([
+    # 좌우 반전은 알파벳에서 금지 (b↔d, p↔q 문제)
+    # tf.keras.layers.RandomFlip("horizontal", seed=SEED),
+
+    tf.keras.layers.RandomRotation(0.1, seed=SEED),          # 너무 크면 6/9, n/u 혼동
+    tf.keras.layers.RandomZoom(0.15, seed=SEED),
+    tf.keras.layers.RandomTranslation(0.1, 0.1, seed=SEED),  # 위치 변화 대응
+    tf.keras.layers.RandomContrast(0.2, seed=SEED),          # 글씨 두께/대비 변화 대응
+], name="data_augmentation")
+
+
+# ============================
+# 2. Conv Block 헬퍼 함수
+# ============================
+def conv_block(x, filters, dropout_rate=0.25):
+    x = tf.keras.layers.Conv2D(filters, (3, 3), padding="same", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.ReLU()(x)
+
+    x = tf.keras.layers.Conv2D(filters, (3, 3), padding="same", use_bias=False)(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.ReLU()(x)
+
+    x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+    x = tf.keras.layers.Dropout(dropout_rate)(x)
+    return x
+
+
+# ============================
+# 3. 모델 구성
+# ============================
+inputs = tf.keras.Input(shape=(IMG_HEIGHT, IMG_WIDTH, 1))
+
+# (이미 0~1 정규화 했다면 Rescaling 생략, 안했으면 주석 해제)
+# x = tf.keras.layers.Rescaling(1./255)(inputs)
+x = data_aug(inputs)
+
+x = conv_block(x, 32, dropout_rate=0.25)   # -> 1/2
+x = conv_block(x, 64, dropout_rate=0.25)   # -> 1/4
+x = conv_block(x, 128, dropout_rate=0.3)   # -> 1/8
+
+# Flatten 대신 GAP (파라미터 적고 과적합 ↓)
+x = tf.keras.layers.GlobalAveragePooling2D()(x)
+
+x = tf.keras.layers.Dense(256, use_bias=False)(x)
+x = tf.keras.layers.BatchNormalization()(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.Dropout(0.5)(x)
+
+outputs = tf.keras.layers.Dense(num_classes, activation="softmax")(x)
+
+model = tf.keras.Model(inputs, outputs, name="alphabet_cnn_improved")
+
+
+# ============================
+# 4. 컴파일 (Label Smoothing 적용)
+# ============================
+# sparse 라벨이면 SparseCategoricalCrossentropy는 label_smoothing 지원 X
+# -> one-hot으로 바꿔서 CategoricalCrossentropy 쓰는 게 베스트
+# 여기선 sparse 유지하고 싶다면 그대로 사용
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='sparse_categorical_crossentropy',
+    metrics=["accuracy"],
+)
+
+model.summary()
+
+
+# ============================
+# 5. 콜백 (성능 끌어올리는 핵심)
+# ============================
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(
+        monitor="val_accuracy",
+        patience=10,
+        restore_best_weights=True,
+        verbose=1,
+    ),
+    tf.keras.callbacks.ReduceLROnPlateau(
+        monitor="val_loss",
+        factor=0.5,
+        patience=4,
+        min_lr=1e-6,
+        verbose=1,
+    ),
+    tf.keras.callbacks.ModelCheckpoint(
+        "best_model.keras",
+        monitor="val_accuracy",
+        save_best_only=True,
+        verbose=1,
+    ),
+]</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div>
+          <div class="code-note">실험 과정의 노트북 셀 원문 · 슬라이드의 최종 제출 모델과 설정이 다름</div>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Present · S144</p><h2>여러분의 결과를 발표해 봐요</h2><p>점수만 말하지 말고, 무엇을 바꾸었는지와 그 선택의 이유, 실제 결과가 어떻게 달라졌는지를 함께 설명합니다.</p></div>
+        <div class="pipeline" role="group" aria-label="CoMNIST 결과 발표 순서">
+          <article class="pipeline__stage"><span class="pipeline__label">01 · Change</span><h3>무엇을 바꿨나?</h3><p>Baseline에서 수정한 데이터 증강과 모델 구조를 짚습니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">02 · Why</span><h3>왜 바꿨나?</h3><p>알파벳 특성이나 이전 결과를 근거로 선택 이유를 말합니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">03 · Result</span><h3>무엇이 달라졌나?</h3><p>파라미터, 학습 시간, Test_acc, 캐글 점수를 함께 비교합니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>전략의 이유 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p3-4-challenge-q1" data-correct-feedback="정답입니다. 흰 배경이 1.0이면 MaxPooling이 배경의 큰 값을 가져갈 수 있어 글씨가 1.0이 되도록 반전합니다." data-wrong-feedback="MaxPooling은 영역에서 큰 값을 가져옵니다. 원래 배경과 글씨 중 어느 쪽이 1.0인지 다시 확인해 보세요.">
+            <span class="quiz__index">CHECK 01</span><h3>선생님의 전략에서 글씨와 배경의 흑백 값을 뒤집은 이유는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">알파벳을 컬러 이미지로 만들기 위해</button><button class="quiz-option" type="button" data-answer="correct">MaxPooling이 큰 배경값 대신 글씨 특징을 가져가게 하기 위해</button><button class="quiz-option" type="button" data-answer="wrong">이미지 해상도를 절반으로 줄이기 위해</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p3-4-challenge-q2" data-correct-feedback="정답입니다. 회전 범위가 너무 크면 Z가 N처럼 보여 클래스의 의미가 달라질 수 있습니다." data-wrong-feedback="알파벳 데이터 증강에서는 모양의 다양성과 글자 의미 보존을 함께 고려해야 합니다.">
+            <span class="quiz__index">CHECK 02</span><h3>RandomRotation을 0.05로 제한한 가장 중요한 이유는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">큰 회전으로 Z가 N처럼 바뀌는 것을 막기 위해</button><button class="quiz-option" type="button" data-answer="wrong">글자를 무조건 중앙에 고정하기 위해</button><button class="quiz-option" type="button" data-answer="wrong">채널 수를 26개로 늘리기 위해</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

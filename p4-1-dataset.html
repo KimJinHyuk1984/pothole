@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="7,035장의 도로 이미지로 구성된 포트홀 데이터셋의 규모, 학습·테스트 분할, 클래스 불균형을 이해하는 수업">
+    <title>포트홀 데이터셋 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p4-1-dataset">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 4 · Pothole Detection</p>
+          <h1>포트홀 데이터셋</h1>
+          <p class="lede">숫자와 알파벳에서 배운 CNN을 실제 도로 문제로 옮깁니다. 먼저 모델이 보게 될 이미지의 규모와 두 클래스의 분포부터 확인합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 145–147</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Project · S145–146</p>
+          <h2>도로 위의 포트홀을 찾아라</h2>
+          <p>학습 데이터셋을 준비하고, CNN으로 포트홀과 정상 도로를 분류한 뒤, 판단 결과를 화면에 시각화합니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-146-a.webp" width="1600" height="873" loading="lazy" decoding="async" alt="포트홀과 정상 도로 이미지 데이터셋을 AI 분류 모델에 넣어 포트홀 감지와 정상 도로 결과로 시각화하는 흐름"></div>
+          <figcaption><strong>Dataset → Classification → Visualization</strong>도로 이미지를 두 범주로 나눠 학습하고, 모델의 판단을 사람이 확인할 수 있는 결과로 보여 줍니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat data-tall id="dataset-scale">
+        <div class="section-head">
+          <p class="eyebrow">Dataset Scale · S146</p>
+          <h2>7,035개, 약 8.6GB</h2>
+          <p>전체 데이터는 포트홀 이미지와 정상 도로 이미지로 구성되며, 학습용 Train 데이터와 마지막 확인용 Test 데이터로 나뉩니다.</p>
+        </div>
+        <div class="stat-grid">
+          <article class="stat-card"><span class="stat-card__value">7,035개</span><strong>전체 파일 수</strong><p>포트홀 4,025개와 정상 3,010개입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">5,626개</span><strong>Train 데이터</strong><p>포트홀 3,218개와 정상 2,408개입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">1,409개</span><strong>Test 데이터</strong><p>포트홀 807개와 정상 602개를 합한 개수입니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">약 8.6GB</span><strong>전체 용량</strong><p>모델이 학습할 실제 도로 이미지 데이터의 크기입니다.</p></article>
+        </div>
+        <p class="source-warning flow-space"><sup>*</sup> <strong>원본 자료에는 1,407로 표기되어 있으나 세부 수치의 합과 전체 개수로 보아 1,409가 맞습니다.</strong> 807 + 602 = 1,409이고, 5,626 + 1,409 = 7,035로 원문의 전체 개수와 일치합니다. 1,407을 사용하면 합계가 7,033이 됩니다.</p>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Class Balance</p>
+          <h2>포트홀 이미지가 더 많다</h2>
+          <p>전체와 Train·Test 분할 모두 포트홀 클래스가 정상 도로 클래스보다 많습니다. 모델을 학습할 때 이 차이를 무시하면 더 자주 본 클래스 쪽으로 판단이 기울 수 있습니다.</p>
+        </div>
+        <div class="dataset-bars" aria-label="포트홀과 정상 도로 클래스 개수 비교">
+          <div class="dataset-bar dataset-bar--all">
+            <div class="dataset-bar__head"><strong>전체</strong><span>4,025 / 3,010</span></div>
+            <div class="dataset-bar__track" aria-hidden="true"><span class="dataset-bar__pothole"></span><span class="dataset-bar__normal"></span></div>
+          </div>
+          <div class="dataset-bar dataset-bar--train">
+            <div class="dataset-bar__head"><strong>Train</strong><span>3,218 / 2,408</span></div>
+            <div class="dataset-bar__track" aria-hidden="true"><span class="dataset-bar__pothole"></span><span class="dataset-bar__normal"></span></div>
+          </div>
+          <div class="dataset-bar dataset-bar--test">
+            <div class="dataset-bar__head"><strong>Test</strong><span>807 / 602</span></div>
+            <div class="dataset-bar__track" aria-hidden="true"><span class="dataset-bar__pothole"></span><span class="dataset-bar__normal"></span></div>
+          </div>
+          <div class="dataset-legend"><span class="dataset-legend__pothole">포트홀</span><span class="dataset-legend__normal">정상 도로</span></div>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Next · class_weight</p>
+          <h2>개수 차이를 학습에 반영한다</h2>
+          <p>다음 포트홀 베이스라인에서는 클래스마다 학습에서 받는 중요도를 조정하는 <code>class_weight</code>로 데이터 불균형을 처리합니다.</p>
+        </div>
+        <div class="split-layout">
+          <article class="analogy" data-icon="⚖">
+            <h3>적게 나온 반의 목소리도 같은 무게로</h3>
+            <p>단순히 많이 등장한 클래스의 답만 따라가지 않도록, 클래스별 데이터 수를 보고 학습 시 가중치를 다르게 줍니다.</p>
+          </article>
+          <div class="prose-stack">
+            <p class="formula"><strong>다음 페이지</strong> p4-2 · 포트홀 베이스라인 코드</p>
+            <p>데이터 로드부터 증강, CNN 구조, 콜백, <code>class_weight</code>를 포함한 실제 학습 흐름으로 이어집니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Target · S147</p>
+          <h2>이미지와 웹캠으로 도로를 판정한다</h2>
+          <p>완성된 모델은 이미지를 업로드하거나 웹캠으로 촬영한 도로를 입력받아 정상과 포트홀을 판정합니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-147-a.webp" width="1600" height="701" loading="lazy" decoding="async" alt="정상과 포트홀 라벨, 임계값, 입력 크기를 설정하고 이미지 업로드 또는 웹캠 촬영으로 판정하는 Pothole Detector 웹앱"></div>
+          <figcaption><strong>Pothole Detector · Keras + Streamlit</strong>정상은 0, 포트홀은 1로 두고 이미지 업로드와 웹캠 촬영 결과를 판정합니다.</figcaption>
+        </figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>데이터 구성 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p4-1-dataset-q1" data-correct-feedback="정답입니다. 원본 S146에는 포트홀 4,025개, 정상 도로 3,010개로 표기되어 있습니다." data-wrong-feedback="전체 7,035개의 두 클래스 개수를 다시 확인해 보세요. 포트홀 이미지가 더 많습니다.">
+            <span class="quiz__index">CHECK 01</span><h3>전체 데이터셋에서 더 많은 클래스는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">포트홀 이미지 4,025개</button><button class="quiz-option" type="button" data-answer="wrong">정상 도로 이미지 4,025개</button><button class="quiz-option" type="button" data-answer="wrong">두 클래스가 각각 3,517개로 같다</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p4-1-dataset-q2" data-correct-feedback="정답입니다. class_weight는 클래스별 데이터 수 차이를 학습 중요도에 반영합니다." data-wrong-feedback="이미지 해상도나 파일 용량을 조절하는 방법이 아닙니다. 클래스 불균형과 연결해 생각해 보세요.">
+            <span class="quiz__index">CHECK 02</span><h3>다음 베이스라인에서 <code>class_weight</code>를 사용하는 이유는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">모든 이미지를 같은 색으로 바꾸기 위해</button><button class="quiz-option" type="button" data-answer="correct">포트홀과 정상 도로의 개수 차이를 학습에 반영하기 위해</button><button class="quiz-option" type="button" data-answer="wrong">데이터 용량을 8.6GB로 고정하기 위해</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="포트홀 CNN 프로젝트를 마무리하며 캐글 제출, 학습 목표 성찰, 사후 설문, 실습 노트북 다운로드를 제공하는 페이지">
+    <title>마무리 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p4-5-wrapup">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 4 · Wrap-up</p>
+          <h1>마무리</h1>
+          <p class="lede">CNN의 원리에서 출발해 포트홀 데이터셋을 준비하고, 모델을 학습하고, 결과를 해석했습니다. 이제 결과를 제출하고 자신의 전략을 언어로 정리합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 182–184</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Submit · S182</p>
+          <h2>포트홀 모델의 결과를 제출한다</h2>
+          <p>Baseline 코드에서 만든 <code>submission.csv</code>를 캐글에 업로드하고, 어떤 전략으로 코드를 작성했는지 설문지에 기록합니다.</p>
+        </div>
+        <div class="action-grid">
+          <a class="action-link is-disabled" data-link-key="kagglePothole" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">Kaggle · Pothole</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>submission.csv 제출</h3><p>포트홀 예측 결과 파일을 업로드하고 모델의 점수를 확인합니다.</p></span>
+          </a>
+          <a class="action-link is-disabled" data-link-key="worksheet" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">Strategy Survey</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>나의 전략 기록</h3><p>바꾼 파라미터와 그 이유, 결과의 변화를 설문지에 정리합니다.</p></span>
+          </a>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Reflection · S183</p>
+          <h2>수업을 통해 느낀 점을 나눠 봅시다</h2>
+          <p>오늘의 결과만 보는 대신, 처음 세운 두 가지 목적에 비추어 자신이 할 수 있게 된 일을 돌아봅니다.</p>
+        </div>
+        <div class="component-grid">
+          <article class="concept-card" data-tone="accent">
+            <span class="quiz__index">PURPOSE 01</span><h3>CNN을 이해하고 적용하기</h3>
+            <p>CNN을 이해하고 학습한 CNN을 교과 탐구에 적용할 수 있다.</p>
+          </article>
+          <article class="concept-card" data-tone="warning">
+            <span class="quiz__index">PURPOSE 02</span><h3>만능 파라미터는 없다</h3>
+            <p>데이터와 문제에 따라 실험하고 비교하며 더 나은 설정을 찾아야 한다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">After Survey · S184</p>
+          <h2>사후 설문에 응답해 주세요</h2>
+          <p>수업 전과 비교해 달라진 이해, 가장 도움이 된 활동, 더 탐구하고 싶은 내용을 남깁니다.</p>
+        </div>
+        <div class="action-grid">
+          <a class="action-link is-disabled" data-link-key="surveyPost" aria-disabled="true" tabindex="-1">
+            <span class="action-link__head"><span class="action-link__type">Post Survey</span><span class="action-link__status" data-link-status>준비 중</span></span>
+            <span><h3>사후 설문</h3><p>사후 설문에 응답해 주세요!</p></span>
+          </a>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall id="downloads">
+        <div class="section-head">
+          <p class="eyebrow">Download · 5 Notebooks</p>
+          <h2>전체 실습 코드를 내려받기</h2>
+          <p>수업에서 사용한 노트북 5개를 내려받아 실행 결과와 자신의 전략을 다시 확인할 수 있습니다.</p>
+        </div>
+        <div class="download-grid">
+          <a class="download-link" href="code/mnist_MLP.ipynb" download>
+            <span class="download-link__head"><span class="download-link__type">Jupyter Notebook</span><span class="download-link__size">01 / 05</span></span>
+            <span><h3>mnist_MLP.ipynb</h3><p>MNIST 숫자를 MLP로 분류하는 기초 실습입니다.</p></span>
+          </a>
+          <a class="download-link" href="code/mnist_CNN.ipynb" download>
+            <span class="download-link__head"><span class="download-link__type">Jupyter Notebook</span><span class="download-link__size">02 / 05</span></span>
+            <span><h3>mnist_CNN.ipynb</h3><p>MNIST 숫자를 CNN으로 분류하고 데이터 증강을 비교합니다.</p></span>
+          </a>
+          <a class="download-link" href="code/coMNIST_baseline.ipynb" download>
+            <span class="download-link__head"><span class="download-link__type">Jupyter Notebook</span><span class="download-link__size">03 / 05</span></span>
+            <span><h3>coMNIST_baseline.ipynb</h3><p>26개 알파벳 클래스의 Baseline 모델을 구성합니다.</p></span>
+          </a>
+          <a class="download-link" href="code/comnist.ipynb" download>
+            <span class="download-link__head"><span class="download-link__type">Jupyter Notebook</span><span class="download-link__size">04 / 05</span></span>
+            <span><h3>comnist.ipynb</h3><p>CoMNIST의 여러 개선 전략과 모델 실험을 담았습니다.</p></span>
+          </a>
+          <a class="download-link" href="code/pothole.ipynb" download>
+            <span class="download-link__head"><span class="download-link__type">Jupyter Notebook</span><span class="download-link__size">05 / 05</span></span>
+            <span><h3>pothole.ipynb</h3><p>포트홀과 정상 도로를 분류하는 전체 프로젝트입니다.</p></span>
+          </a>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Next Learning</p>
+          <h2>다음에는 나의 교과 탐구로</h2>
+          <p>CNN의 원리와 실험 방법을 다른 교과의 이미지 분류 문제에 옮겨 봅니다. 중요한 것은 정답처럼 외울 만능 파라미터가 아니라, 문제와 데이터에 맞는 근거를 세우는 일입니다.</p>
+        </div>
+        <div class="pipeline" role="group" aria-label="다음 교과 탐구 제안 순서">
+          <article class="pipeline__stage"><span class="pipeline__label">01 · Question</span><h3>분류 질문 정하기</h3><p>교과에서 이미지로 구분해 보고 싶은 두 개 이상의 범주를 정합니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">02 · Data</span><h3>데이터 준비하기</h3><p>범주별 이미지를 모으고 학습과 확인에 쓸 데이터를 나눕니다.</p></article>
+          <article class="pipeline__stage"><span class="pipeline__label">03 · Evidence</span><h3>전략 비교하기</h3><p>파라미터를 바꾼 이유와 결과를 기록하고 근거를 바탕으로 설명합니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>수업의 결론 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p4-5-wrapup-q1" data-correct-feedback="정답입니다. 같은 파라미터가 모든 데이터와 문제에서 항상 최고일 수는 없습니다." data-wrong-feedback="Purpose 2의 문장을 그대로 떠올려 보세요. 좋은 설정은 문제와 데이터에 따라 달라집니다.">
+            <span class="quiz__index">CHECK 01</span><h3>‘만능 파라미터는 없다’는 말이 강조하는 태도는 무엇일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">한 번 좋은 점수가 나온 설정을 모든 문제에 그대로 사용한다</button><button class="quiz-option" type="button" data-answer="correct">문제와 데이터에 맞게 실험하고 결과를 비교한다</button><button class="quiz-option" type="button" data-answer="wrong">파라미터를 바꾸지 않고 학습 횟수만 무한히 늘린다</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+          <article class="quiz" data-quiz="p4-5-wrapup-q2" data-correct-feedback="정답입니다. MNIST MLP·CNN, CoMNIST Baseline·개선 실험, 포트홀 프로젝트의 노트북 5개를 제공합니다." data-wrong-feedback="다운로드 목록의 번호 01부터 05까지를 다시 세어 보세요.">
+            <span class="quiz__index">CHECK 02</span><h3>이 페이지에서 내려받을 수 있는 실습 노트북은 모두 몇 개일까요?</h3>
+            <div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">3개</button><button class="quiz-option" type="button" data-answer="correct">5개</button><button class="quiz-option" type="button" data-answer="wrong">21개</button></div>
+            <p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>
