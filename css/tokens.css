@@ -1,0 +1,77 @@
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* 배경 계열 — 아스팔트 */
+  --bg: #0f1113;
+  --bar: #0a0c0d;
+  --surface: #16191b;
+  --surface-2: #1d2124;
+  --line: #272b2e;
+
+  /* 텍스트 */
+  --fg: #f2efe9;
+  --fg-soft: #c0bcb4;
+  --muted: #85817a;
+
+  /* 액센트 — 노면 표시 */
+  --accent: #ffc72c;
+  --accent-2: #ff6b35;
+  --on-accent: #141618;
+  --accent-wash: rgba(255, 199, 44, 0.09);
+  --orange-wash: rgba(255, 107, 53, 0.1);
+
+  /* 코드 */
+  --code-bg: #08090b;
+  --code-head: #12151800;
+  --code-line: #1e2225;
+  --code-fg: #e4e0d9;
+  --code-hl: rgba(255, 199, 44, 0.09);
+  --c-key: #ffc72c;
+  --c-str: #9ed36a;
+  --c-num: #ff9e64;
+  --c-fn: #7fd3e0;
+  --c-com: #6a6f70;
+
+  /* 상태 */
+  --ok: #56d364;
+  --warn: #ff6b35;
+  --danger: #ff7b72;
+
+  /* 형태 */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+
+  /* 타이포 */
+  --font-display: "JetBrains Mono", "Pretendard", ui-monospace, monospace;
+  --font-display-ko: "Pretendard", "JetBrains Mono", system-ui, sans-serif;
+  --font-body: "Pretendard", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --tracking-title: -0.03em;
+
+  /* 레이아웃 */
+  --content: 72rem;
+  --reading: 47rem;
+  --gutter: clamp(1rem, 4vw, 3rem);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bar: #ffffff;
+  --surface: #f7f8fa;
+  --surface-2: #eef0f3;
+  --line: #e3e6ea;
+  --fg: #16191c;
+  --fg-soft: #40464d;
+  --muted: #6e757d;
+  --accent: #a8620a;
+  --accent-2: #d9480f;
+  --on-accent: #ffffff;
+  --accent-wash: rgba(168, 98, 10, 0.09);
+  --orange-wash: rgba(217, 72, 15, 0.08);
+  --shadow: 0 18px 48px rgba(22, 25, 28, 0.1);
+  /* 코드 토큰은 다크 값을 그대로 상속한다. */
+}
