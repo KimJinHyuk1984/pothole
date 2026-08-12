@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="RandomFlip, RandomRotation, RandomZoom 코드와 CNN·MLP 증강 결과를 비교하는 수업">
+    <title>데이터 증강 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        window.Prism = { manual: true };
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p2-5-augmentation">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">◐</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 2 · Data Augmentation</p>
+          <h1>데이터 증강</h1>
+          <p class="lede">같은 숫자를 회전하고 확대·축소해 더 다양한 상황을 연습시킨 뒤, CNN과 MLP가 이동된 숫자에 얼마나 강해졌는지 비교합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 87–90</span><span>Notebook · mnist_CNN.ipynb · cells 30–38</span></p>
+        </div>
+      </section>
+      <hr class="road-divider" aria-hidden="true">
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Concept · S87</p><h2>한 장을 여러 상황으로 연습하기</h2><p>회전, 확대·축소, 이동, 반전, 밝기 변화로 원본의 의미를 유지한 새 표본을 만듭니다. 데이터 부족을 보완하고 일반화 성능을 높이며 과적합을 막는 방법입니다.</p></div>
+        <aside class="analogy" data-icon="↻"><h3>학습할 때만 문제를 어렵게</h3><p>증강 층은 학습 중에는 입력을 흔들지만 평가와 예측에서는 꺼집니다. 모델이 한 자세만 외우지 못하게 하는 훈련 장치입니다.</p></aside>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Interactive · Widget ⑤</p><h2>증강 미리보기</h2></div>
+        <section class="widget-shell widget-placeholder" aria-labelledby="augmentation-widget-title"><header class="widget-titlebar"><h3 id="augmentation-widget-title">증강 미리보기</h3><span class="widget-tag">준비 중</span></header><div class="widget-body"><div class="widget-placeholder__copy"><h3>회전·확대·이동을 한눈에</h3><p>값을 바꾸며 같은 숫자가 어떻게 달라지는지 비교하는 위젯이 들어옵니다.</p></div></div></section>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 01 / 06</p><h2>9. 데이터 증강 적용하기</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 12">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">01_9_데이터_증강_적용하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">data_augmentation = tf.keras.Sequential([
+    # 좌우 반전 (숫자와 알파벳은 b/d 처럼 의미가 달라질 수 있어 주의 필요, 포트홀엔 필수)
+    # tf.keras.layers.RandomFlip("horizontal", seed=SEED),
+
+    # 무작위 회전 (약 20% 범위 내에서 비틀어 보기)
+    tf.keras.layers.RandomRotation(0.2, seed=SEED),
+
+    # 무작위 확대/축소 (약 20% 범위 내에서 멀리서/가까이서 보기)
+    tf.keras.layers.RandomZoom(0.2, seed=SEED),
+])</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>데이터 증강은 인위적인 변화로 데이터의 양과 다양성을 확보합니다. RandomFlip은 숫자와 알파벳처럼 좌우 반전 시 의미가 달라질 수 있어 주석 처리했고, RandomRotation과 RandomZoom을 사용합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 02 / 06</p><h2>9. 다시 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 13">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">02_9_다시_학습.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">inputs = tf.keras.Input(shape=(28, 28, 1))
+
+x = data_augmentation(inputs)
+
+x = tf.keras.layers.Conv2D(32, (3, 3), padding='same')(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPool2D((2, 2))(x)
+
+x = tf.keras.layers.Flatten()(x)
+x = tf.keras.layers.Dense(128)(x)
+x = tf.keras.layers.ReLU()(x)
+
+outputs = tf.keras.layers.Dense(10)(x)
+outputs = tf.keras.layers.Softmax()(outputs)
+
+model = tf.keras.Model(inputs, outputs, name='mnist_cnn_data_augmented')</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>데이터 증강 층은 학습할 때만 동작하고 평가와 예측에서는 자동으로 꺼집니다. Dropout과 같은 특성입니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 03 / 06</p><h2>9. 다시 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 14">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">03_9_다시_학습.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>증강을 포함한 CNN도 같은 손실함수와 accuracy 지표로 컴파일합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 04 / 06</p><h2>9. 다시 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 15">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">04_9_다시_학습.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">history = model.fit(x_train, y_train,
+                    validation_split = 0.2,
+                    epochs = 10)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>증강된 학습 데이터로 5 epoch를 학습하고 원래 테스트 데이터로 일반화를 확인합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 05 / 06</p><h2>9. 다시 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 16">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">05_9_다시_학습.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">print("\n========== 최종 테스트 결과 ==========")
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
+print(f"\n테스트 정확도: {test_acc * 100:.2f}%")</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>증강 CNN의 이동된 테스트 데이터 정확도를 출력합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 06 / 06</p><h2>9. 다시 학습</h2></div>
+        <figure class="code" data-lang="python" data-file="mnist_CNN.ipynb · block 17">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">06_9_다시_학습.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">plot_history_subplot(history)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습과 검증의 정확도·손실 곡선을 그려 증강 효과와 과적합 여부를 비교합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Compare · S89–90</p><h2>CNN과 MLP에 같은 흔들림을 주면</h2><p>CNN+증강은 이동된 테스트 데이터에서 92.36%, MLP+증강은 88.88%를 기록했습니다. 증강은 두 모델 모두에 도움을 주지만, 위치 주변의 패턴을 보는 CNN이 흔들린 숫자에 더 강했습니다.</p></div>
+        <div class="table-scroll"><table class="data-table"><thead><tr><th>모델</th><th>증강</th><th>이동된 테스트 정확도</th></tr></thead><tbody><tr><th>CNN</th><td>RandomRotation 0.2 + RandomZoom 0.2</td><td><strong>92.36%</strong></td></tr><tr><th>MLP</th><td>같은 이동 데이터 학습</td><td>88.88%</td></tr></tbody></table></div>
+        <div class="media-grid"><figure class="media"><img src="assets/slide-089-a.webp" alt="데이터 증강을 적용한 CNN의 5 epoch 학습 로그와 이동된 테스트 정확도 92.36퍼센트"><figcaption>CNN + 증강 · 이동된 테스트 정확도 92.36%</figcaption></figure><figure class="media"><img src="assets/slide-090-a.webp" alt="데이터 증강을 적용한 MLP의 5 epoch 학습 로그와 이동된 테스트 정확도 88.88퍼센트"><figcaption>MLP + 증강 · 이동된 테스트 정확도 88.88%</figcaption></figure></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>증강 규칙 확인</h2></div>
+        <article class="quiz" data-quiz="p2-5-q1" data-correct-feedback="맞습니다. 숫자와 알파벳은 좌우 반전하면 의미나 모양이 달라질 수 있어 RandomFlip을 그대로 쓰지 않습니다." data-wrong-feedback="좌우 반전된 숫자나 b와 d 같은 글자가 원래 라벨을 유지해도 되는지 생각해보세요."><span class="quiz__index">CHECK 01</span><h3>MNIST 코드에서 RandomFlip이 주석 처리된 이유는?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">좌우 반전이 숫자의 의미나 모양을 바꿀 수 있어서</button><button class="quiz-option" type="button" data-answer="wrong">CNN에서는 반전 연산을 지원하지 않아서</button><button class="quiz-option" type="button" data-answer="wrong">이미지가 컬러가 아니라서</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+      </section>
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

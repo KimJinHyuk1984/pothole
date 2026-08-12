@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="224×224 포트홀 이미지의 전처리, 증강, CNN, 콜백, class_weight와 평가를 다루는 코드 수업">
+    <title>포트홀 베이스라인 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        window.Prism = { manual: true };
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p4-2-baseline">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">◐</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 4 · Pothole Baseline</p>
+          <h1>포트홀 베이스라인</h1>
+          <p class="lede">실사 도로 사진을 224×224로 맞추고 네 개의 합성곱 블록, 두 콜백, 클래스 가중치로 포트홀 탐지 베이스라인을 만듭니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 148–167</span><span>Notebook · pothole.ipynb</span></p>
+        </div>
+      </section>
+      <hr class="road-divider" aria-hidden="true">
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Input · S148–150</p><h2>왜 224×224인가</h2><p>ResNet, VGG, MobileNet 등 널리 쓰이는 사전학습 모델의 표준 입력 크기와 맞습니다. 지금은 직접 만든 CNN이지만, 이후 전이학습으로 확장할 때도 같은 입력 파이프라인을 이어갈 수 있습니다.</p></div>
+        <aside class="analogy" data-icon="📐"><h3>공용 규격에 맞춘 도로 표지판</h3><p>처음부터 224×224로 맞추면 다른 표준 모델로 갈아탈 때 데이터 파이프라인 전체를 다시 짤 필요가 줄어듭니다.</p></aside>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 01 / 22</p><h2>0. GPU메모리 확보를 위한 코드</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 0">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">01_0_gpu메모리_확보를_위한_코드.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import os
+os.environ['TF_GPU_ALLOCATOR'] = 'cuda_malloc_async'
+
+import tensorflow as tf
+
+# 메모리 성장 모드 — 필요한 만큼만 점진적으로 할당
+gpus = tf.config.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+
+print("TF:", tf.__version__)
+print("GPU:", gpus)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>TensorFlow가 GPU 메모리를 한 번에 점유하지 않도록 필요한 만큼만 늘려 씁니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 02 / 22</p><h2>1. 모듈 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 1">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">02_1_모듈_불러오기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import os, random
+import numpy as np
+import tensorflow as tf
+import koreanize_matplotlib
+import matplotlib.pyplot as plt</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>파일·난수·배열·TensorFlow·시각화와 평가 지표에 필요한 모듈을 불러옵니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 03 / 22</p><h2>2. 랜덤 시드 고정으로 재현성 확보하기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 2">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">03_2_랜덤_시드_고정으로_재현성_확보하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">SEED = 42
+os.environ["PYTHONHASHSEED"] = str(SEED)
+random.seed(SEED)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>재현 가능한 비교를 위해 Python, NumPy, TensorFlow의 시드를 42로 맞춥니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 04 / 22</p><h2>3. 이미지 크기와 배치 사이즈 설정</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 3">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">04_3_이미지_크기와_배치_사이즈_설정.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 일반적으로 딥러닝 학습시 224*224 사용(여러 유명 모델에서 사용한 이미지 크기)
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
+
+# 이미지가 컬러이기 때문에 배치사이즈 줄이자
+BATCH_SIZE = 128 # 하이퍼파라미터 설정시 변경</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>ResNet, VGG, MobileNet 등 거의 모든 사전학습 모델이 표준 입력으로 쓰는 224×224를 채택하고 배치 크기는 코드 원문대로 128로 둡니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 05 / 22</p><h2>4-1. 데이터 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 4">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">05_4_1_데이터_불러오기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">DATA_PATH = "/root/data/pothole"
+
+TRAIN_DATA_PATH = DATA_PATH + "/images/train"
+TEST_DATA_PATH = DATA_PATH + "/images/test"
+
+print("학습 데이터 경로:", TRAIN_DATA_PATH)
+print("테스트 데이터 경로:", TEST_DATA_PATH)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-151-b.webp" alt="포트홀 학습 데이터와 테스트 데이터 경로가 출력된 실행 화면"><figcaption>실행 결과 · 학습·테스트 데이터 경로 확인</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>정상과 포트홀 이미지가 들어 있는 데이터 경로를 지정합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 06 / 22</p><h2>4-2. 학습 데이터셋 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 5">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">06_4_2_학습_데이터셋_불러오기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">train_ds = tf.keras.utils.image_dataset_from_directory(
+    TRAIN_DATA_PATH,
+    validation_split=0.2,
+    subset="training",
+    seed=SEED,
+    image_size=(IMG_HEIGHT, IMG_WIDTH),
+    batch_size=BATCH_SIZE,
+    label_mode='binary',
+    color_mode="rgb" # 컬러이미지
+)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-152-b.webp" alt="총 5626개 파일 중 4501개를 학습용으로 불러온 실행 로그"><figcaption>실행 결과 · 5,626개 중 학습 데이터 4,501개 로드</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>폴더를 클래스 이름으로 읽고 80%를 학습 데이터로 분리합니다. RGB 실사 이미지이므로 채널은 3개입니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 07 / 22</p><h2>4-3. 검증 데이터셋 불러오기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 6">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">07_4_3_검증_데이터셋_불러오기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">val_ds = tf.keras.utils.image_dataset_from_directory(
+    TRAIN_DATA_PATH,
+    validation_split=0.2,
+    subset="validation",
+    seed=SEED,
+    image_size=(IMG_HEIGHT, IMG_WIDTH),
+    batch_size=BATCH_SIZE,
+    label_mode='binary',
+    color_mode="rgb" # 컬러이미지
+)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-153-b.webp" alt="총 5626개 파일 중 1125개를 검증용으로 불러온 실행 로그"><figcaption>실행 결과 · 5,626개 중 검증 데이터 1,125개 로드</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>같은 seed로 나머지 20%를 검증 데이터로 분리합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 08 / 22</p><h2>4-4. 불러온 데이터셋 클래스 확인하기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 7">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">08_4_4_불러온_데이터셋_클래스_확인하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 클래스 이름 확인
+class_names = train_ds.class_names
+print("Class names:", class_names)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-154-a.webp" alt="클래스 이름이 normal과 potholes 순서로 출력된 실행 화면"><figcaption>실행 결과 · 클래스 순서 normal, potholes 확인</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>알파벳순으로 <code>normal=0</code>, <code>potholes=1</code>이 됩니다. 이 순서는 class_weight, sigmoid 해석, 혼동행렬 라벨의 기준입니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 09 / 22</p><h2>4-5. 데이터 전처리</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 8+9+10+11">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">09_4_5_데이터_전처리.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 클래스 이름 저장(map 적용 전에)
+
+class_names = train_ds.class_names
+num_classes = len(class_names)
+print(f"클래스 개수: {num_classes}, 라벨: {class_names}")
+
+# 데이터 정규화
+normalization_layer = tf.keras.layers.Rescaling(1./255)
+
+# 데이터셋에 정규화 적용
+train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
+val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y))
+
+# 성능 최적화
+AUTOTUNE = tf.data.AUTOTUNE
+train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
+val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
+
+print("데이터 전처리 완료")</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="media-grid">
+          <figure class="media"><img src="assets/slide-155-b.webp" alt="클래스 개수 2와 normal, potholes 라벨이 출력된 전처리 실행 화면"><figcaption>실행 결과 · 클래스 개수와 라벨 백업 확인</figcaption></figure>
+          <figure class="media"><img src="assets/slide-156-b.webp" alt="정규화와 캐시 및 프리패치 적용 후 데이터 전처리 완료가 출력된 화면"><figcaption>실행 결과 · 정규화와 성능 최적화 완료</figcaption></figure>
+          <figure class="media"><img src="assets/slide-156-c.webp" alt="클래스 개수 2와 normal, potholes 라벨이 다시 출력된 실행 화면"><figcaption>실행 결과 · 원본 슬라이드의 클래스 백업 출력</figcaption></figure>
+        </div>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p><code>map()</code> 전에 클래스 이름을 백업하고 0~255 픽셀을 0~1로 정규화합니다. cache와 prefetch로 다음 epoch와 다음 배치를 준비합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 10 / 22</p><h2>4-6. 학습 데이터셋 확인하기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 12" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">10_4_6_학습_데이터셋_확인하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">for images, labels in train_ds.take(1):
+    print(f"images dtype: {images.dtype}, min: {images.numpy().min():.3f}, max: {images.numpy().max():.3f}")
+    print(f"labels dtype: {labels.dtype}, shape: {labels.shape}")
+    print(f"labels 샘플 9개: {labels[:9].numpy().flatten()}")
+    print(f"class_names: {class_names} (len={len(class_names)})")
+
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        try:
+            ax = plt.subplot(3, 3, i + 1)
+
+            img = images[i].numpy()
+            # 혹시 0~255 범위면 클리핑 방지
+            if img.max() &gt; 1.5:
+                img = img.astype("uint8")
+
+            plt.imshow(img)
+
+            # 라벨이 (1,) shape이어도 안전하게 처리
+            class_idx = int(labels[i].numpy().flatten()[0])
+            plt.title(f"[{i}] {class_names[class_idx]}")
+            plt.axis("off")
+        except Exception as e:
+            print(f"❌ i={i}에서 에러: {type(e).__name__}: {e}")
+            break  # 어디서 멈췄는지 보이게
+
+    plt.tight_layout()
+    plt.show()
+    break</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습 배치의 자료형·범위·모양과 라벨을 출력하고 9장을 눈으로 확인합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 11 / 22</p><h2>4-7. 검증 데이터셋 확인하기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 13" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">11_4_7_검증_데이터셋_확인하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">for images, labels in val_ds.take(1):
+    print(f"images dtype: {images.dtype}, min: {images.numpy().min():.3f}, max: {images.numpy().max():.3f}")
+    print(f"labels dtype: {labels.dtype}, shape: {labels.shape}")
+    print(f"labels 샘플 9개: {labels[:9].numpy().flatten()}")
+    print(f"class_names: {class_names} (len={len(class_names)})")
+
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        try:
+            ax = plt.subplot(3, 3, i + 1)
+
+            img = images[i].numpy()
+            # 혹시 0~255 범위면 클리핑 방지
+            if img.max() &gt; 1.5:
+                img = img.astype("uint8")
+
+            plt.imshow(img)
+
+            # 라벨이 (1,) shape이어도 안전하게 처리
+            class_idx = int(labels[i].numpy().flatten()[0])
+            plt.title(f"[{i}] {class_names[class_idx]}")
+            plt.axis("off")
+        except Exception as e:
+            print(f"❌ i={i}에서 에러: {type(e).__name__}: {e}")
+            break  # 어디서 멈췄는지 보이게
+
+    plt.tight_layout()
+    plt.show()
+    break</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>검증 배치에도 같은 확인을 반복해 전처리와 라벨 순서가 일치하는지 살핍니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 12 / 22</p><h2>5. 데이터 증강 설정</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 14" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">12_5_데이터_증강_설정.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">data_aug = tf.keras.Sequential([
+    # 1. 기하학적 변환 (형태 다양화)
+    # 포트홀은 위아래/좌우가 뒤집혀도 포트홀이므로, 상하좌우 모두 반전 허용
+    tf.keras.layers.RandomFlip("horizontal", seed=SEED),
+
+    # 회전 (약 20% 범위), 빈 공간은 주변 픽셀로 채움(nearest)
+    tf.keras.layers.RandomRotation(0.05, fill_mode='nearest', seed=SEED),
+
+    # 확대/축소 (약 20% 범위)
+    tf.keras.layers.RandomZoom(0.1, seed=SEED),
+
+    # 위치 이동 (상하좌우 10% 정도 움직여서 포트홀이 구석에 있는 경우 대비)
+    tf.keras.layers.RandomTranslation(height_factor=0.1, width_factor=0.1, seed=SEED),
+
+    # 2. 광학적 변환 (날씨/조명 다양화 - 실사 이미지에 매우 중요!)
+    # 밝기 조절 (그림자나 햇빛 대응)
+    tf.keras.layers.RandomBrightness(factor=0.15, seed=SEED),
+
+    # 대비 조절 (아스팔트 색상이나 마모도 차이 대응)
+    tf.keras.layers.RandomContrast(factor=0.15, seed=SEED),
+])</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>좌우 반전·회전·확대·이동에 밝기와 대비 변환을 더합니다. 실사에서는 날씨·조명 변화에 대응하는 광학적 증강이 결정적입니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall data-code-step-beat>
+        <div class="section-head"><p class="eyebrow">Code 13 / 22</p><h2>6-1. CNN 모델 구조 설정</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 15" data-steps='[{"lines":"1-3","note":"224×224×3 입력과 데이터 증강을 연결합니다."},{"lines":"5-13","note":"첫 두 블록이 필터를 32개에서 64개로 늘리며 공간 크기를 줄입니다."},{"lines":"15-23","note":"셋째와 넷째 블록이 128개, 256개 특징으로 더 깊게 읽습니다."},{"lines":"25-28","note":"14×14×256 특징맵을 펼쳐 128개 뉴런으로 분류합니다."},{"lines":"30-35","note":"sigmoid 출력 하나로 포트홀 확률을 만들고 모델을 완성합니다."}]' data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">13_6_1_cnn_모델_구조_설정.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">inputs = tf.keras.Input(shape=(IMG_HEIGHT, IMG_WIDTH, 3))
+
+x = data_aug(inputs)
+
+# --- Block 1 ---
+x = tf.keras.layers.Conv2D(32, (3, 3), padding="same")(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+
+# --- Block 2 ---
+x = tf.keras.layers.Conv2D(64, (3, 3), padding="same")(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+
+# --- Block 3 ---
+x = tf.keras.layers.Conv2D(128, (3, 3), padding="same")(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+
+# --- Block 4 ---
+x = tf.keras.layers.Conv2D(256, (3, 3), padding="same")(x)
+x = tf.keras.layers.ReLU()(x)
+x = tf.keras.layers.MaxPooling2D((2, 2))(x)
+
+# --- 분류기 ---
+x = tf.keras.layers.Flatten()(x)
+x = tf.keras.layers.Dense(128)(x)
+x = tf.keras.layers.ReLU()(x)
+
+# 출력층: 시그모이드를 사용하기 위해 1개로 설정
+# 이진분류이므로 시그모이드 함수 사용 -&gt; threshold는 0.5 사용
+outputs = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+
+# 모델 생성
+model = tf.keras.Model(inputs, outputs, name="pothole_cnn_baseline")</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">강조 없음 · 다음 단계에서 핵심 설계를 따라갑니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>네 개 합성곱 블록으로 224→112→56→28→14로 줄인 뒤, 128개 뉴런과 sigmoid 1개로 정상/포트홀을 분류합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 14 / 22</p><h2>6-2. CNN 모델 컴파일</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 16">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">14_6_2_cnn_모델_컴파일.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># learning_rate 조정을 위해
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+
+# 지표 정의(이름을 줘야 monitor에 쓰기 편함)
+auc = tf.keras.metrics.AUC(name="auc")
+prec = tf.keras.metrics.Precision(name="precision")
+rec = tf.keras.metrics.Recall(name="recall")
+
+model.compile(
+    optimizer=optimizer,
+    loss='binary_crossentropy',
+    metrics=["accuracy", prec, rec, auc],
+)</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습률 0.0001의 Adam과 binary crossentropy를 쓰고 accuracy, precision, recall, AUC를 함께 기록합니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 15 / 22</p><h2>6-3. CNN 모델 요약</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 17">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">15_6_3_cnn_모델_요약.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">model.summary()</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-162-b.webp" alt="224×224 입력에서 네 개 합성곱 블록을 거치는 포트홀 CNN 모델 요약"><figcaption>실행 결과 · 모델 요약과 총 파라미터 6,811,201개</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>모델 요약에서 총 6,811,201개 파라미터와 각 합성곱 블록의 출력 크기를 확인합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-code-step-beat>
+        <div class="section-head"><p class="eyebrow">Code 16 / 22</p><h2>6-4. Early stopping 설정</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 18" data-steps='[{&quot;lines&quot;:&quot;1-8&quot;,&quot;note&quot;:&quot;EarlyStopping이 val_auc가 10번 정체되면 가장 좋은 가중치로 돌아갑니다.&quot;},{&quot;lines&quot;:&quot;9-16&quot;,&quot;note&quot;:&quot;ReduceLROnPlateau가 val_auc 정체 시 학습률을 1/5로 낮춰 미세 조정합니다.&quot;}]'>
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">16_6_4_early_stopping_설정.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">callbacks = [
+    tf.keras.callbacks.EarlyStopping(
+        monitor="val_auc",
+        patience=10,
+        restore_best_weights=True,
+        verbose=1,
+        mode="max"
+    ),
+    tf.keras.callbacks.ReduceLROnPlateau(
+        monitor="val_auc",
+        factor=0.2,
+        patience=5,
+        min_lr=1e-6,
+        verbose=1,
+        mode="max"
+    )
+]</code></pre></div>
+          <div class="code-note">강조 없음 · 다음 단계에서 핵심 설계를 따라갑니다.</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>CoMNIST와 달리 콜백이 두 개입니다. EarlyStopping은 val_auc가 멈추면 종료하고, ReduceLROnPlateau는 정체 시 학습률을 1/5로 줄입니다.</p></div>
+      </section>
+      <section class="beat" data-beat><div class="section-head"><p class="eyebrow">Callbacks · S163</p><h2>멈추기와 보폭 줄이기를 함께</h2><p>EarlyStopping은 더 나아지지 않을 때 학습을 끝내고, ReduceLROnPlateau는 끝내기 전에 학습률을 낮춰 골짜기 주변을 더 세밀하게 탐색합니다.</p></div><div class="note-teacher"><strong>교사용 메모</strong><p><code>val_auc</code>는 클수록 좋은 지표라 두 콜백 모두 <code>mode="max"</code>가 필요합니다. loss를 감시할 때의 기본 방향과 반대임을 확인시킵니다.</p></div></section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 17 / 22</p><h2>7. 학습하기</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 19" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">17_7_학습하기.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import time
+import datetime
+
+start_time = time.time()
+
+# --- 클래스 매핑 확인 (안전장치) ---
+# 0번이 Normal이 맞는지 꼭 확인하세요!
+print(f"Class 0: {class_names[0]}, Class 1: {class_names[1]}")
+
+# --- 학습 코드 -------------
+# 포트홀 : 정상 = 4025 : 3010
+# 비정상적으로 포트홀의 이미지가 1.33배 많음
+# 따라서 정상 데이터에 1.33배 가중치를 줘야지 모델이 그냥 찍지 않음
+class_weight = {
+    0: 1.33, # normal에 1.33배 가중치
+    1: 1.0  # pothole는 그대로 기준점
+}
+history = model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=100,
+    # batch_size=BATCH_SIZE, # train_ds에 이미 포함되어 있기 때문에 삭제
+    callbacks=callbacks,
+    class_weight=class_weight, # 가중치 주고 학습하기
+    verbose=1
+)
+# -------------------------
+end_time = time.time()
+execution_time = end_time - start_time
+
+# 시:분:초 형태로 자동 변환
+str_time = str(datetime.timedelta(seconds=execution_time))
+print(f"총 학습 소요 시간: {str_time}")</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>포트홀 4,025장과 정상 3,010장의 불균형 때문에 정상 클래스의 손실에 1.33배 가중치를 줍니다. EarlyStopping이 있으므로 100 epoch는 상한선입니다.</p></div>
+      </section>
+      <section class="beat" data-beat><div class="section-head"><p class="eyebrow">Balance · S164</p><h2>class_weight로 게으른 정답 막기</h2><p>포트홀 4,025장, 정상 3,010장으로 포트홀이 약 1.33배 많습니다. 적은 정상 클래스의 손실에 1.33배를 주어 “항상 포트홀”이라고 답하는 편법을 불리하게 만듭니다.</p></div></section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 18 / 22</p><h2>8. 모델 평가</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 20">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">18_8_모델_평가.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">loss, acc, precision, recall, auc = model.evaluate(val_ds, verbose=0)
+
+print(f"Loss:      {loss:.4f}")
+print(f"Accuracy:  {acc:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall:    {recall:.4f}")
+print(f"AUC:       {auc:.4f}")</code></pre></div>
+          <div class="code-note">노트북 원문</div>
+        </figure>
+        <figure class="media"><img src="assets/slide-165-a.webp" alt="포트홀 모델의 loss 0.6822, accuracy 0.6596, precision 0.9451, recall 0.4593, AUC 0.8513이 출력된 실행 화면"><figcaption>실행 결과 · Loss 0.6822, Accuracy 0.6596, Precision 0.9451, Recall 0.4593, AUC 0.8513</figcaption></figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>검증 데이터에서 loss, accuracy, precision, recall, AUC를 계산합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 19 / 22</p><h2>8. 모델 평가</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 21" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">19_8_모델_평가.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import matplotlib.pyplot as plt
+
+def plot_history(history):
+    # 확인할 지표 리스트 (compile 시 설정한 이름과 일치해야 함)
+    metrics = ['loss', 'accuracy', 'precision', 'recall', 'auc']
+
+    # 그래프 크기 설정 (2행 3열)
+    plt.figure(figsize=(18, 10))
+
+    for i, metric in enumerate(metrics):
+        plt.subplot(2, 3, i + 1) # 2행 3열의 i+1번째 칸
+
+        train_values = history.history[metric]
+        val_values = history.history[f'val_{metric}']
+        epochs = range(1, len(train_values) + 1)
+
+        plt.plot(epochs, train_values, 'b-', label=f'Training {metric}')
+        plt.plot(epochs, val_values, 'r--', label=f'Validation {metric}')
+
+        plt.title(f'Model {metric.capitalize()}')
+        plt.xlabel('Epochs')
+        plt.ylabel(metric.capitalize())
+        plt.legend()
+        plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+# 그래프 출력
+plot_history(history)</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>학습과 검증의 다섯 지표를 함께 그립니다. 안전 문제에서는 포트홀을 놓치지 않는 Recall을 특히 봅니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 20 / 22</p><h2>8. 모델 평가</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 22" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">20_8_모델_평가.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+
+def display_confusion_matrix(model, dataset, class_names, threshold):
+    all_labels = []
+    all_preds = []
+
+    # 1. 데이터셋에서 실제 라벨과 예측값 수집
+    for images, labels in dataset:
+        preds = model.predict(images, verbose=0)
+        all_labels.extend(labels.numpy())
+        all_preds.extend(preds)
+
+    all_labels = np.array(all_labels).flatten()
+    all_preds = np.array(all_preds).flatten()
+
+    # 2. 임계값(0.5)을 기준으로 0 또는 1로 변환
+    all_preds_binary = (all_preds &gt; threshold).astype(int)
+
+    # 3. 혼동 행렬 계산
+    cm = confusion_matrix(all_labels, all_preds_binary)
+
+    # 4. 시각화
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=class_names,
+                yticklabels=class_names)
+
+    plt.title('Confusion Matrix', fontsize=15)
+    plt.xlabel('Predicted Label (예측)', fontsize=12)
+    plt.ylabel('True Label (실제)', fontsize=12)
+    plt.show()
+
+    # 간단한 요약 출력
+    tn, fp, fn, tp = cm.ravel()
+    print(f"\n--- 상세 결과 ---")
+    print(f"✅ 실제 정상인데 정상으로 맞춤 (TN): {tn}")
+    print(f"🚨 실제 정상인데 포트홀로 오보 (FP): {fp}")
+    print(f"⚠️ 실제 포트홀인데 정상으로 놓침 (FN): {fn}")
+    print(f"🔥 실제 포트홀을 포트홀로 맞춤 (TP): {tp}")
+
+# 실행 (학습 완료 후 호출)
+display_confusion_matrix(model, val_ds, class_names, 0.50)</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="media-grid">
+          <figure class="media"><img src="assets/slide-167-b.webp" alt="혼동행렬의 정상 정답 432개, 정상 오탐 18개, 포트홀 미탐 365개, 포트홀 정답 310개가 출력된 로그"><figcaption>실행 결과 · TN 432, FP 18, FN 365, TP 310</figcaption></figure>
+          <figure class="media"><img src="assets/slide-167-c.webp" alt="정상과 포트홀 예측의 2×2 혼동행렬 그래프"><figcaption>실행 결과 · 정상과 포트홀 예측 혼동행렬</figcaption></figure>
+        </div>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>임계값 0.5로 확률을 이진화하고 혼동행렬에서 정상/포트홀의 정답과 오류를 나눕니다.</p></div>
+      </section>
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Code 21 / 22</p><h2>8. 모델 평가</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 23" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">21_8_모델_평가.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 히스토그램
+
+# 1. 검증 데이터셋의 예측 확률값 가져오기
+predictions = model.predict(val_ds)
+
+# 2. 확률값 분포 히스토그램 그리기
+plt.figure(figsize=(10, 6))
+plt.hist(predictions[predictions &lt;= 0.5], bins=50, alpha=0.7, color='blue', label='Predicted Normal (&lt;0.5)')
+plt.hist(predictions[predictions &gt; 0.5], bins=50, alpha=0.7, color='red', label='Predicted Pothole (&gt;0.5)')
+
+# 0.3과 0.5 기준선 표시
+plt.axvline(x=0.5, color='black', linestyle='--', label='Threshold 0.5')
+#plt.axvline(x=0.3, color='green', linestyle='--', label='Threshold 0.3')
+
+#plt.xlim(0, 1)
+
+plt.title('Prediction Probability Distribution')
+plt.xlabel('Probability (Potholeness)')
+plt.ylabel('Count')
+plt.legend()
+plt.show()</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>예측 확률 히스토그램으로 0.5 주변에 애매한 표본이 얼마나 모이는지 확인합니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Code 22 / 22</p><h2>8. 모델 평가</h2></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 24" data-collapse="18">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">22_8_모델_평가.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python">import pandas as pd
+import tensorflow as tf
+import os
+import numpy as np
+
+# 1. 설정 및 준비
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
+base_path = '/root/data/pothole'  # 기존 다운로드 경로 사용
+
+# test.csv 로드
+test_df = pd.read_csv(os.path.join(base_path, 'test.csv'))
+
+# 클래스 이름 (학습 시 0: normal, 1: potholes 순서였음)
+class_names = ['normal', 'potholes']
+
+# 2. [핵심] 안전한 이미지 로드 제너레이터 (에러 방지)
+def test_image_generator():
+    """
+    이미지를 하나씩 읽어서 반환하되,
+    깨진 파일이 있으면 '검은색 이미지'를 대신 반환하여
+    전체 개수와 순서를 지킴
+    """
+    for fname in test_df['filename']:
+        # 경로 생성 (혹시 images 폴더가 없으면 바로 path에서 찾음)
+        file_path = os.path.join(base_path, 'images', fname)
+        if not os.path.exists(file_path):
+             file_path = os.path.join(base_path, fname)
+
+        try:
+            # 이미지 읽기 &amp; 전처리
+            img_raw = tf.io.read_file(file_path)
+            img = tf.io.decode_image(img_raw, channels=3, expand_animations=False)
+            img = tf.image.resize(img, [IMG_HEIGHT, IMG_WIDTH])
+            img = tf.cast(img, tf.float32) / 255.0
+            yield img
+
+        except Exception as e:
+            # 🚨 에러 발생 시 로그 출력 후 '검은색 빈 이미지' 대체
+            print(f"⚠️ 손상된 파일 발견 (0값 대체): {fname}")
+            yield tf.zeros([IMG_HEIGHT, IMG_WIDTH, 3], dtype=tf.float32)
+
+# 3. 데이터셋 만들기 (from_generator 사용)
+test_ds = tf.data.Dataset.from_generator(
+    test_image_generator,
+    output_signature=tf.TensorSpec(shape=(IMG_HEIGHT, IMG_WIDTH, 3), dtype=tf.float32)
+)
+
+# 배치 설정 (배치 크기 32)
+test_ds = test_ds.batch(32).prefetch(tf.data.AUTOTUNE)
+
+# 4. 예측 수행
+print(f"🚀 테스트 데이터 {len(test_df)}개 예측 시작...")
+predictions = model.predict(test_ds, verbose=1)
+
+# 5. 결과 변환 (확률 -&gt; 라벨)
+threshold = 0.5
+predicted_indices = (predictions &gt; threshold).astype(int).flatten()
+predicted_labels = [class_names[i] for i in predicted_indices]
+
+# 6. submission.csv 저장
+submission = pd.DataFrame({
+    'filename': test_df['filename'],
+    'label': predicted_labels
+})
+
+save_filename = 'pothole_complete.csv'
+submission.to_csv(save_filename, index=False)
+
+print(f"\n✅ {save_filename} 파일 저장 완료!")
+print(submission.head())</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div><div class="code-note">노트북 원문</div>
+        </figure>
+        <div class="notebook-note"><span class="notebook-note__label">Notebook markdown</span><p>파일명, 실제 라벨, 예측 확률, 예측 라벨, 정답 여부를 표로 묶어 오분류 사례를 찾습니다.</p></div>
+      </section>
+      <section class="beat" data-beat data-tall><div class="section-head"><p class="eyebrow">Quick Check</p><h2>실세계 베이스라인 점검</h2></div><div class="stack"><article class="quiz" data-quiz="p4-2-q1" data-correct-feedback="맞습니다. 데이터 수가 적은 정상 클래스의 오답 손실을 더 크게 계산해 다수 클래스만 찍는 전략을 막습니다." data-wrong-feedback="class_weight는 이미지 크기나 학습률이 아니라 클래스별 손실의 비중을 바꿉니다."><span class="quiz__index">CHECK 01</span><h3>정상 클래스에 1.33의 class_weight를 주는 이유는?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">정상 이미지를 1.33배 크게 만들기 위해</button><button class="quiz-option" type="button" data-answer="correct">수가 적은 정상 클래스를 모델이 무시하지 못하게 하기 위해</button><button class="quiz-option" type="button" data-answer="wrong">AUC를 정확히 1.33배 높이기 위해</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article><article class="quiz" data-quiz="p4-2-q2" data-correct-feedback="맞습니다. EarlyStopping은 종료를, ReduceLROnPlateau는 정체 시 학습률을 낮추는 미세 조정을 담당합니다." data-wrong-feedback="두 콜백의 역할을 ‘언제 끝내나’와 ‘보폭을 어떻게 바꾸나’로 나누어 보세요."><span class="quiz__index">CHECK 02</span><h3>두 콜백의 역할을 올바르게 짝지은 것은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">EarlyStopping—종료, ReduceLROnPlateau—학습률 축소</button><button class="quiz-option" type="button" data-answer="wrong">EarlyStopping—이미지 회전, ReduceLROnPlateau—라벨 생성</button><button class="quiz-option" type="button" data-answer="wrong">둘 다 데이터 수를 늘림</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article></div></section>
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>
