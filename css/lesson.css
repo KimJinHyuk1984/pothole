@@ -223,6 +223,77 @@
   font-size: 0.68rem;
 }
 
+.remote-step {
+  display: grid;
+  gap: 1.15rem;
+  padding: clamp(1.1rem, 3vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.remote-step__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.remote-step__number {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.remote-step__head h3 {
+  margin-bottom: 0.3rem;
+}
+
+.remote-step__head p {
+  color: var(--fg-soft);
+}
+
+.metric-crop {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.13;
+  border-radius: var(--r-md);
+  background: #fff;
+}
+
+.metric-crop img {
+  width: 340%;
+  max-width: none;
+  transform-origin: top left;
+}
+
+.metric-crop--loss img {
+  transform: translate(-3.2%, -2.3%);
+}
+
+.metric-crop--accuracy img {
+  transform: translate(-36.7%, -2.3%);
+}
+
+.metric-crop--precision img {
+  transform: translate(-70.1%, -2.3%);
+}
+
+.metric-crop--recall img {
+  transform: translate(-3.2%, -52.6%);
+}
+
+.metric-crop--auc img {
+  transform: translate(-36.7%, -52.6%);
+}
+
 .layer-flow,
 .pipeline {
   display: grid;

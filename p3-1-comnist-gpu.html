@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CoMNIST 데이터와 CPU·GPU 차이를 이해하고 VS Code Remote-SSH로 A100 서버에 접속하는 수업">
+    <title>CoMNIST와 A100 GPU · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p3-1-comnist-gpu">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 3 · CoMNIST &amp; GPU</p>
+          <h1>CoMNIST와 A100 GPU</h1>
+          <p class="lede">숫자 10개에서 알파벳 26개로 문제를 확장하고, 더 큰 이미지를 빠르게 학습하기 위해 원격 A100 GPU 서버에 접속합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 91–104</span></p>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Learning Goals · S92</p><h2>이번 Part의 두 가지 목표</h2></div>
+        <div class="concept-grid">
+          <article class="concept-card" data-tone="accent"><h3>CoMNIST 학습</h3><p>CoMNIST 데이터를 CNN으로 학습할 수 있다.</p></article>
+          <article class="concept-card"><h3>성능 개선</h3><p>여러 하이퍼 파라미터를 변경하면서 모델의 성능을 높일 수 있다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Dataset · S93–94</p>
+          <h2>10개 숫자에서 26개 알파벳으로</h2>
+          <p>CoMNIST는 키릴 문자와 라틴 문자를 위한 MNIST 데이터셋입니다. 이번 수업에서는 모두 대문자인 알파벳 26글자 이미지를 분석합니다.</p>
+        </div>
+        <div class="stat-grid">
+          <article class="stat-card"><span class="stat-card__value">12,825장</span><strong>전체 이미지</strong><p>MNIST보다 분류할 글자와 이미지 크기가 모두 커집니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">278×278</span><strong>한 장의 크기</strong><p>28×28 MNIST보다 픽셀 수가 훨씬 많습니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">26글자</span><strong>출력 클래스</strong><p>A부터 Z까지의 대문자를 분류합니다.</p></article>
+          <article class="stat-card"><span class="stat-card__value">약 90MB</span><strong>데이터 용량</strong><p>CPU만으로 처리하면 학습이 느려집니다.</p></article>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-093-a.webp" width="739" height="467" loading="lazy" decoding="async" alt="J, P, R, M, V, H 대문자 손글씨로 구성된 CoMNIST 이미지 예시"></div>
+          <figcaption><strong>CoMNIST 표본</strong>글자마다 굵기와 기울기, 획의 모양이 서로 다릅니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">CPU vs GPU · S95</p><h2>누가 1,000개의 단순 계산을 더 빨리 풀까?</h2></div>
+        <aside class="analogy" data-icon="⚡">
+          <h3>고등학생 10명 vs 초등학생 1,000명</h3>
+          <p>CPU는 매우 복잡한 연산을 매우 빠르게 처리할 수 있는 고등학생 10명과 같습니다. GPU는 단순한 연산을 빠르게 처리하는 초등학생 1,000명과 같습니다. 덧셈과 곱셈처럼 같은 계산을 대량으로 동시에 풀 때는 GPU의 병렬 처리가 유리합니다.</p>
+        </aside>
+        <div class="concept-grid flow-space">
+          <article class="concept-card"><h3>CPU</h3><p>한 개의 총구가 매우 빠르게 색깔과 위치를 바꿔가며 발사하는 장치에 가깝습니다.</p></article>
+          <article class="concept-card" data-tone="accent"><h3>GPU</h3><p>여러 개의 총구가 고정된 자리에서 한꺼번에 발사하는 장치에 가깝습니다.</p></article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Hardware · S96–98</p><h2>딥러닝은 쩐의 전쟁</h2><p>대규모 병렬 연산 장치는 매우 비쌉니다. 원본 자료의 가격 화면은 GPU와 CPU의 비용 차이를 직관적으로 보여 줍니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-096-a.webp" width="450" height="96" loading="lazy" decoding="async" alt="NVIDIA Tesla A100 80GB 제품 가격 24,916,300원 화면"></div><figcaption><strong>A100 80GB</strong>원본 자료 당시 표시 가격 24,916,300원</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-096-f.webp" width="450" height="96" loading="lazy" decoding="async" alt="NVIDIA H100 94GB 제품 가격 42,000,000원 화면"></div><figcaption><strong>H100 94GB</strong>원본 자료 당시 표시 가격 42,000,000원</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-096-g.webp" width="450" height="138" loading="lazy" decoding="async" alt="Intel Core Ultra 9 CPU 제품 가격 919,990원 화면"></div><figcaption><strong>CPU 비교</strong>원본 자료 당시 표시 가격 919,990원</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-097-c.webp" width="696" height="363" loading="lazy" decoding="async" alt="A100 SXM 한 개, 11 vCPU, 128GB RAM, 186.26GiB SSD인 원격 GPU 서버 사양"></div><figcaption><strong>우리가 사용할 자원</strong>A100 SXM ×1과 128GB RAM이 있는 원격 서버</figcaption></figure>
+        </div>
+        <p class="source-warning flow-space">가격은 원본 수업 자료에 캡처된 당시 화면이며 현재 판매 가격을 뜻하지 않습니다.</p>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Remote Lab · S97–98</p><h2>A100을 직접 사는 대신 원격으로 사용한다</h2><p>각자 배정된 계정으로 학교의 원격 GPU 환경에 접속합니다. 계정, 호스트, 포트, 개인 키는 학생마다 다르므로 자신의 배정값만 사용합니다.</p></div>
+        <div class="note-teacher"><strong>교사용 메모</strong><p>원본 S98의 학생 이름·계정·포트 표는 개인정보와 접속 정보가 포함되어 있어 페이지에 전시하지 않습니다. 수업 중에는 별도로 안전하게 배부한 개인 정보를 사용합니다.</p></div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 01 · S99</p><h2>Remote - SSH 확장 설치</h2><p>VS Code를 실행하고 확장 탭에서 <code>Remote-SSH</code>를 검색해 Microsoft 확장을 설치합니다.</p></div>
+        <article class="remote-step"><div class="remote-step__head"><span class="remote-step__number">01</span><div><h3>확장 탭 열기</h3><p>검색 결과의 제작자가 Microsoft인지 확인합니다.</p></div></div><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-099-a.webp" width="1600" height="480" loading="lazy" decoding="async" alt="VS Code 확장 탭에서 Microsoft Remote SSH 확장을 검색하고 설치하는 화면"></div><figcaption><strong>원본 UI · S99</strong>Remote - SSH 확장 설치 화면</figcaption></figure></article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 02 · S100</p><h2>SSH 구성 파일 열기</h2><p><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>를 누르고 <code>Remote-SSH: Open SSH Configuration File</code>을 선택한 뒤 사용자 폴더의 <code>.ssh/config</code>를 엽니다.</p></div>
+        <article class="remote-step"><div class="remote-step__head"><span class="remote-step__number">02</span><div><h3>사용자 SSH config 선택</h3><p>시스템 전체 파일이 아니라 자신의 사용자 폴더 아래 구성 파일을 선택합니다.</p></div></div><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-100-a.webp" width="1320" height="296" loading="lazy" decoding="async" alt="VS Code 명령 팔레트에서 사용자 폴더의 SSH config 파일을 선택하는 화면"></div><figcaption><strong>원본 UI · S100</strong>업데이트할 SSH 구성 파일 선택</figcaption></figure></article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 03 · S101</p><h2>배정받은 접속 정보 입력</h2><p><code>Host</code>, <code>HostName</code>, <code>IdentityFile</code>, <code>Port</code>, <code>User</code>를 자신의 배정 정보에 맞춰 입력하고 저장합니다.</p></div>
+        <article class="remote-step">
+          <div class="remote-step__head"><span class="remote-step__number">03</span><div><h3>예시를 그대로 복사하지 않기</h3><p>스크린샷의 호스트명·키 파일 경로·포트는 예시입니다. 자신의 PEM 키 위치와 개인별 포트를 입력합니다.</p></div></div>
+          <div class="media-grid">
+            <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-101-a.webp" width="1320" height="296" loading="lazy" decoding="async" alt="SSH 구성 파일 선택 화면을 다시 확인하는 원본 UI"></div><figcaption><strong>원본 UI · S101</strong>config 파일 열기</figcaption></figure>
+            <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-101-b.webp" width="520" height="178" loading="lazy" decoding="async" alt="VS Code config 파일에 Host, HostName, IdentityFile, Port, User를 입력한 화면"></div><figcaption><strong>원본 UI · S101</strong>SSH 항목 입력</figcaption></figure>
+          </div>
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-101-c.webp" width="1301" height="331" loading="lazy" decoding="async" alt="SSH config 예시가 확대된 화면, Host와 원격 주소, 개인 키 경로, 포트, root 사용자가 표시됨"></div><figcaption><strong>원본 UI · S101</strong>구성 항목 확대 화면</figcaption></figure>
+        </article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 04 · S102</p><h2>호스트에 접속하고 Linux 선택</h2><p>명령 팔레트에서 <code>Remote-SSH: Connect to Host...</code>를 선택하고 저장한 호스트를 누릅니다. 새 창이 열리면 원격 호스트 플랫폼으로 Linux를 선택합니다.</p></div>
+        <article class="remote-step"><div class="remote-step__head"><span class="remote-step__number">04</span><div><h3>호스트 → Linux</h3><p>연결 과정에서 호스트 선택과 운영체제 선택을 차례로 진행합니다.</p></div></div><div class="media-grid"><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-102-a.webp" width="1320" height="251" loading="lazy" decoding="async" alt="VS Code에서 구성된 SSH 호스트를 선택하는 화면"></div><figcaption><strong>원본 UI · S102</strong>저장한 호스트 선택</figcaption></figure><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-102-b.webp" width="908" height="185" loading="lazy" decoding="async" alt="원격 호스트 플랫폼으로 Linux를 선택하는 화면"></div><figcaption><strong>원본 UI · S102</strong>Linux 플랫폼 선택</figcaption></figure></div></article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 05 · S103</p><h2><code>/root/</code> 폴더 열기</h2><p>연결된 VS Code 창에서 폴더 열기를 누르고 <code>/root/</code>를 선택합니다. 신뢰 여부가 표시되면 배정받은 서버가 맞는지 확인한 뒤 계속합니다.</p></div>
+        <article class="remote-step"><div class="remote-step__head"><span class="remote-step__number">05</span><div><h3>작업 폴더와 신뢰 확인</h3><p>알 수 없는 서버나 폴더라면 진행하지 말고 교사에게 확인합니다.</p></div></div><div class="media-grid"><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-103-a.webp" width="1298" height="391" loading="lazy" decoding="async" alt="원격 VS Code에서 root 폴더를 여는 화면"></div><figcaption><strong>원본 UI · S103</strong><code>/root/</code> 폴더 선택</figcaption></figure><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-103-b.webp" width="714" height="285" loading="lazy" decoding="async" alt="VS Code가 원격 폴더 작성자를 신뢰하는지 확인하는 화면"></div><figcaption><strong>원본 UI · S103</strong>폴더 신뢰 여부 확인</figcaption></figure></div></article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Remote-SSH · Step 06 · S104</p><h2><code>nvidia-smi</code>로 A100 확인</h2><p>하단 터미널에서 <code>nvidia-smi</code>를 입력하고 Enter를 누릅니다. GPU 이름, 메모리, 사용률이 표시되면 원격 GPU 환경에 정상적으로 접속한 것입니다.</p></div>
+        <article class="remote-step"><div class="remote-step__head"><span class="remote-step__number">06</span><div><h3>NVIDIA A100-SXM4-80GB</h3><p>원본 화면에서는 메모리 81,920MiB와 GPU 사용률 0%가 표시됩니다.</p></div></div><figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-104-a.webp" width="1008" height="489" loading="lazy" decoding="async" alt="터미널의 nvidia-smi 실행 결과, NVIDIA A100-SXM4-80GB와 81920MiB 메모리가 표시됨"></div><figcaption><strong>실행 결과 · S104</strong>A100 GPU와 CUDA 환경 확인</figcaption></figure></article>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>GPU와 원격 접속 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p3-1-q1" data-correct-feedback="맞습니다. 같은 덧셈과 곱셈을 대량으로 처리하는 딥러닝에서는 많은 연산 장치가 동시에 일하는 GPU가 유리합니다." data-wrong-feedback="고등학생 10명과 초등학생 1,000명 중 같은 단순 문제 1,000개를 동시에 나누어 푸는 상황을 떠올려 보세요."><span class="quiz__index">CHECK 01</span><h3>딥러닝 학습에서 GPU가 유리한 핵심 이유는?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">한 개의 복잡한 명령만 처리해서</button><button class="quiz-option" type="button" data-answer="correct">많은 단순 계산을 동시에 처리해서</button><button class="quiz-option" type="button" data-answer="wrong">이미지를 자동으로 정답 처리해서</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+          <article class="quiz" data-quiz="p3-1-q2" data-correct-feedback="맞습니다. nvidia-smi 출력에서 GPU 이름과 메모리, 사용률을 확인하면 A100 환경이 연결되었는지 점검할 수 있습니다." data-wrong-feedback="마지막 단계의 터미널 출력에서 어떤 하드웨어 정보가 표시됐는지 확인해 보세요."><span class="quiz__index">CHECK 02</span><h3>Remote-SSH 접속 후 A100 연결을 확인하는 명령은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">python --version</button><button class="quiz-option" type="button" data-answer="correct">nvidia-smi</button><button class="quiz-option" type="button" data-answer="wrong">git status</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

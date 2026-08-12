@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MNIST 이미지를 옮겼을 때 MLP 예측이 무너지는 이유와 위치 변화에 약한 한계를 이해하는 수업">
+    <title>MLP의 한계 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p1-6-mlp-limits">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 1 · MLP Limits</p>
+          <h1>MLP의 한계</h1>
+          <p class="lede">같은 숫자라도 자리를 조금 옮기면 MLP에게는 완전히 다른 입력이 됩니다. 위치를 외운 모델이 왜 흔들리는지 실제 예측 결과로 확인합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 54–57</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head">
+          <p class="eyebrow">Failure Cases · S54–55</p>
+          <h2>어떤 경우 정확도가 떨어졌는가?</h2>
+          <p>숫자 4가 중앙을 벗어나 화면의 모서리와 가장자리로 이동하자, 원본 모델은 각각 3·5·7·2로 예측했습니다.</p>
+        </div>
+        <div class="media-grid">
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-a.webp" width="562" height="554" loading="lazy" decoding="async" alt="오른쪽 위로 치우친 숫자 4"></div><figcaption><strong>예측 3 · 확률 100%</strong>실제 숫자는 4입니다.</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-c.webp" width="560" height="564" loading="lazy" decoding="async" alt="왼쪽 아래로 치우친 숫자 4"></div><figcaption><strong>예측 5 · 확률 100%</strong>실제 숫자는 4입니다.</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-d.webp" width="562" height="552" loading="lazy" decoding="async" alt="오른쪽 아래로 치우친 숫자 4"></div><figcaption><strong>예측 7 · 확률 100%</strong>실제 숫자는 4입니다.</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-e.webp" width="558" height="558" loading="lazy" decoding="async" alt="왼쪽 위로 치우친 숫자 4"></div><figcaption><strong>예측 2 · 확률 95.6%</strong>틀린 답도 강하게 확신할 수 있습니다.</figcaption></figure>
+        </div>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Why</p>
+          <h2>MLP는 모양보다 좌표를 먼저 외운다</h2>
+          <p>Flatten 뒤의 각 입력 뉴런은 특정 위치의 픽셀과 연결됩니다. 같은 획이 다른 좌표로 옮겨지면, 사람에게는 같은 숫자여도 MLP가 받는 784개 값의 배치는 크게 달라집니다.</p>
+        </div>
+        <aside class="analogy" data-icon="🗄️">
+          <h3>서랍 위치까지 외운 답안</h3>
+          <p>내용은 같은데 종이를 다른 서랍에 넣었다고 찾지 못한다면, 종이의 의미가 아니라 보관 위치를 외운 셈입니다. MLP의 픽셀 연결도 이와 비슷합니다.</p>
+        </aside>
+        <aside class="note-teacher"><strong>교사용 메모</strong><p>“숫자 7의 모양이 바뀐 것이 아니라 좌표가 바뀌었다”는 점을 먼저 확인시킨 뒤, CNN의 필터가 같은 패턴을 여러 위치에서 찾는 이유로 연결합니다.</p></aside>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Shift Test · S56</p>
+          <h2>오른쪽 5칸, 아래 5칸 이동</h2>
+          <p>실제 정답 7인 테스트 이미지를 오른쪽과 아래로 각각 5픽셀 옮겼습니다. 획의 모양과 정답은 그대로지만 화면 안의 위치만 달라졌습니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-056-a.webp" width="744" height="342" loading="lazy" decoding="async" alt="원래 위치의 숫자 7과 오른쪽 아래로 5픽셀 이동한 숫자 7 비교"></div>
+          <figcaption><strong>이동 전후 비교</strong>왼쪽은 원본, 오른쪽은 dx=5, dy=5로 이동한 같은 숫자 7입니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Training Output · S56</p>
+          <h2>과적합을 줄이기 위해 5번만 학습</h2>
+          <p>원본 자료의 모델은 5 epoch만 학습했습니다. 마지막 epoch의 학습 정확도는 98.54%, 검증 정확도는 97.08%였지만 위치 이동 문제는 남았습니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-056-b.webp" width="1018" height="221" loading="lazy" decoding="async" alt="MLP를 원본 데이터로 5 epoch 학습한 로그, 마지막 학습 정확도 0.9854와 검증 정확도 0.9708"></div>
+          <figcaption><strong>실행 결과 · 원본 데이터 학습</strong>높은 전체 정확도가 위치 변화에 대한 강건함까지 보장하지는 않습니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head">
+          <p class="eyebrow">Prediction · S57</p>
+          <h2>같은 7을 2로 예측했다</h2>
+          <p>사람에게는 조금 이동한 같은 숫자지만, MLP는 입력 데이터 자체가 완전히 달라졌다고 인식해 엉뚱한 예측을 할 확률이 높습니다.</p>
+        </div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-057-a.webp" width="514" height="715" loading="lazy" decoding="async" alt="오른쪽 아래로 이동한 숫자 7을 MLP가 2로 잘못 예측한 실행 결과"></div>
+          <figcaption><strong>실행 결과 · 실제 7, 예측 2</strong>위치 변화에 약한 MLP의 한계를 직접 보여 줍니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Interactive · Widget ⑦</p><h2>이동 거리를 바꾸면 확률은 어떻게 무너질까?</h2></div>
+        <section class="widget-shell widget-placeholder" aria-labelledby="shift-widget-title">
+          <header class="widget-titlebar"><h3 id="shift-widget-title">MNIST 이동 실험</h3><span class="widget-tag">준비 중</span></header>
+          <div class="widget-body"><div class="widget-placeholder__copy"><h3>0칸에서 5칸까지 이동</h3><p>이동 슬라이더를 조절하면 미리 계산한 예측 확률이 어떻게 달라지는지 보여 주는 위젯이 들어옵니다.</p></div></div>
+        </section>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>MLP의 위치 민감성 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p1-6-q1" data-correct-feedback="맞습니다. Flatten 이후에는 각 픽셀 위치가 서로 다른 입력 뉴런에 대응하므로 같은 획도 좌표가 달라지면 다른 입력 배열이 됩니다." data-wrong-feedback="숫자의 정답과 획은 그대로인데 무엇이 달라졌는지 생각해 보세요."><span class="quiz__index">CHECK 01</span><h3>숫자 7을 5픽셀 옮겼을 때 MLP 입력에서 가장 크게 달라지는 것은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">숫자의 실제 정답</button><button class="quiz-option" type="button" data-answer="correct">밝은 픽셀이 놓인 좌표</button><button class="quiz-option" type="button" data-answer="wrong">출력 클래스의 개수</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+          <article class="quiz" data-quiz="p1-6-q2" data-correct-feedback="맞습니다. 높은 평균 정확도만으로는 위치가 달라진 입력에도 잘 작동한다고 결론 내릴 수 없습니다." data-wrong-feedback="원본 데이터의 전체 정확도와 이동된 한 장의 예측 결과를 함께 비교해 보세요."><span class="quiz__index">CHECK 02</span><h3>검증 정확도가 약 97%라는 결과로 알 수 없는 것은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">위치가 이동한 숫자에도 강하다는 사실</button><button class="quiz-option" type="button" data-answer="wrong">원본 분포의 검증 이미지 대부분을 맞혔다는 사실</button><button class="quiz-option" type="button" data-answer="wrong">모델이 5 epoch 학습했다는 사실</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>

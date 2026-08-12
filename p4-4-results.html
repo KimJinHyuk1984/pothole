@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="포트홀 CNN의 Loss, Accuracy, AUC, Precision, Recall 그래프와 임계값 0.5 결과를 해석하는 수업">
+    <title>학습 결과 해석 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        window.Prism = { manual: true };
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
+    <script type="module" src="js/present.js"></script>
+  </head>
+  <body data-page="p4-4-results">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 4 · Reading Results</p>
+          <h1>학습 결과 해석</h1>
+          <p class="lede">정확도 하나만 보지 않습니다. 오답률, 변별력, 신중함, 놓치지 않는 능력을 함께 읽어 포트홀 탐지 모델의 실제 행동을 해석합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 172–181</span><span>Notebook · pothole.ipynb</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Metric 01 / 05 · S172–173</p><h2>Loss · 오답률</h2><p>학습이 진행될수록 매끄럽게 내려가야 하는 값입니다.</p></div>
+        <figure class="lesson-media">
+          <div class="metric-crop metric-crop--loss"><img src="assets/slide-173-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training loss와 Validation loss 그래프"></div>
+          <figcaption><strong>원본 해석</strong>Training loss : 초기에 급격히 하락한 후 0.7정도에 수렴<br>Validation loss : 초기부터 훈련 손실보다 낮은 0.5정도 유지하며 안정적<br>➡️ 두 곡선이 나란히 가고 있어 과적합 징후는 보이지 않음</figcaption>
+        </figure>
+        <aside class="note-teacher"><strong>교사용 메모</strong><p>Train Loss는 내려가는데 Val Loss가 올라가면 과적합 시작.</p></aside>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Metric 02 / 05 · S174</p><h2>Accuracy · 정확도</h2><p>전체 예측 중 맞힌 비율이지만, 데이터 불균형이 있다면 중요도가 낮아질 수 있습니다.</p></div>
+        <figure class="lesson-media">
+          <div class="metric-crop metric-crop--accuracy"><img src="assets/slide-174-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training accuracy와 Validation accuracy 그래프"></div>
+          <figcaption><strong>원본 해석</strong>Training loss : 약 67%의 정확도<br>Validation loss : 약 80%의 정확도<br>➡️ 모델이 검증셋을 분류하는 능력이 훈련 데이터보다 더 우수</figcaption>
+        </figure>
+        <p class="source-warning">원본 문장의 <code>loss</code> 표기를 보존했습니다. 이 beat에서는 각각 Training accuracy와 Validation accuracy를 가리킵니다.</p>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Metric 03 / 05 · S175</p><h2>AUC · 변별력</h2><p>모델이 “정상”과 “포트홀”을 얼마나 명확하게 구분해낼 수 있는지에 대한 종합 점수입니다.</p></div>
+        <figure class="lesson-media">
+          <div class="metric-crop metric-crop--auc"><img src="assets/slide-175-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training AUC와 Validation AUC 그래프"></div>
+          <figcaption><strong>원본 해석</strong>Training loss : 약 0.7<br>Validation loss : 약 0.85<br>➡️ 모델이 검증셋을 분류하는 능력이 훈련 데이터보다 더 우수</figcaption>
+        </figure>
+        <p class="source-warning">원본 문장의 <code>loss</code> 표기를 보존했습니다. 이 beat에서는 각각 Training AUC와 Validation AUC를 가리킵니다.</p>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Metric 04 / 05 · S176</p><h2>Precision · 정밀도</h2><p>모델이 “포트홀이다!”라고 외친 것 중 실제 포트홀인 비율입니다.</p></div>
+        <figure class="lesson-media">
+          <div class="metric-crop metric-crop--precision"><img src="assets/slide-176-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training precision과 Validation precision 그래프"></div>
+          <figcaption><strong>원본 해석</strong>Validation loss : 약 0.9이상으로 모델이 “정답”이라고 예측한 것 중 틀린 것은 없다<br>➡️ 모델이 검증셋에 대해서는 “확실한 것만 정답으로 맞히는(신중한) 경향을 보임</figcaption>
+        </figure>
+        <p class="source-warning">원본 문장의 <code>Validation loss</code> 표기를 보존했습니다. 이 beat에서는 Validation precision을 가리킵니다.</p>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Metric 05 / 05 · S177</p><h2>Recall · 재현율</h2><p>실제 포트홀들을 모델이 놓치지 않고 찾아낸 비율입니다. 도로 안전 측면에서는 가장 중요합니다.</p></div>
+        <figure class="lesson-media">
+          <div class="metric-crop metric-crop--recall"><img src="assets/slide-177-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training recall과 Validation recall 그래프"></div>
+          <figcaption><strong>원본 해석</strong>훈련데이터의 재현률(약 0.85)이 검증 데이터(약 0.7)보다 높다<br>➡️ 모델이 검증셋에 대해서는 “확실한 것만 정답으로 맞히는(신중한) 경향을 보임</figcaption>
+        </figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat>
+        <div class="section-head"><p class="eyebrow">Overall · S178</p><h2>AUC 0.85, 그러나 아직 덜 배웠을 수 있다</h2><p>다섯 그래프를 종합하면 변별력은 준수하지만 훈련 성능 자체가 낮습니다. 모델이 데이터의 특징을 충분히 다 배우지 못한 과소적합 상태일 가능성이 있습니다.</p></div>
+        <div class="concept-grid">
+          <article class="concept-card" data-tone="accent"><h3>준수한 분류 성능</h3><p>AUC 약 0.85로 정상과 포트홀을 구분하는 종합 능력은 양호합니다.</p></article>
+          <article class="concept-card" data-tone="warning"><h3>과소적합 가능성</h3><p>훈련 지표가 충분히 높지 않아 모델 용량이나 학습 조건을 더 살펴봐야 합니다.</p></article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Threshold · S179</p><h2>임계값 0.5로 판정한 결과</h2><p>포트홀 확률이 0.5보다 크면 포트홀, 그렇지 않으면 정상으로 분류합니다.</p></div>
+        <figure class="lesson-media">
+          <div class="lesson-media__stage"><img src="assets/slide-179-a.webp" width="1014" height="986" loading="lazy" decoding="async" alt="임계값 0.5를 적용한 포트홀 혼동행렬, TN 355, FP 35, FN 175, TP 432"></div>
+          <figcaption><strong>실행 결과 · 임계값 0.5</strong>정상 정답 355개, 정상 오탐 35개, 포트홀 미탐 175개, 포트홀 정답 432개입니다.</figcaption>
+        </figure>
+        <div class="stat-grid flow-space">
+          <article class="stat-card"><span class="stat-card__value">355</span><strong>TN</strong><p>실제 정상을 정상으로 맞춤</p></article>
+          <article class="stat-card"><span class="stat-card__value">35</span><strong>FP</strong><p>실제 정상을 포트홀로 오보</p></article>
+          <article class="stat-card"><span class="stat-card__value">175</span><strong>FN</strong><p>실제 포트홀을 정상으로 놓침</p></article>
+          <article class="stat-card"><span class="stat-card__value">432</span><strong>TP</strong><p>실제 포트홀을 포트홀로 맞춤</p></article>
+        </div>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Probability · S180–181</p><h2>0.5 경계 주변에 예측이 몰려 있다</h2><p>파란색은 0.5 이하의 정상 예측, 빨간색은 0.5를 넘은 포트홀 예측입니다. 두 분포가 경계 가까이에 모여 있어 임계값을 바꾸면 판정 결과도 크게 달라질 수 있습니다.</p></div>
+        <figure class="code" data-lang="python" data-file="pothole.ipynb · block 23" data-collapse="14">
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">prediction_histogram.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># 히스토그램
+
+# 1. 검증 데이터셋의 예측 확률값 가져오기
+predictions = model.predict(val_ds)
+
+# 2. 확률값 분포 히스토그램 그리기
+plt.figure(figsize=(10, 6))
+plt.hist(predictions[predictions &lt;= 0.5], bins=50, alpha=0.7, color='blue', label='Predicted Normal (&lt;0.5)')
+plt.hist(predictions[predictions &gt; 0.5], bins=50, alpha=0.7, color='red', label='Predicted Pothole (&gt;0.5)')
+
+# 0.3과 0.5 기준선 표시
+plt.axvline(x=0.5, color='black', linestyle='--', label='Threshold 0.5')
+#plt.axvline(x=0.3, color='green', linestyle='--', label='Threshold 0.3')
+
+#plt.xlim(0, 1)
+
+plt.title('Prediction Probability Distribution')
+plt.xlabel('Probability (Potholeness)')
+plt.ylabel('Count')
+plt.legend()
+plt.show()</code></pre></div>
+          <div class="code-actions"><button class="code-toggle" type="button" aria-expanded="false">전체 보기</button></div>
+          <div class="code-note">노트북 원문 · 검증 데이터의 포트홀 확률을 임계값 0.5 양쪽으로 나눠 그립니다.</div>
+        </figure>
+        <figure class="lesson-media flow-space">
+          <div class="lesson-media__stage"><img src="assets/slide-181-a.webp" width="840" height="529" loading="lazy" decoding="async" alt="포트홀 예측 확률 분포 히스토그램, 0.5 임계값 양쪽에 정상과 포트홀 예측이 모여 있음"></div>
+          <figcaption><strong>실행 결과 · 예측 확률 분포</strong>검은 점선은 실제 판정에 사용한 0.5 임계값입니다.</figcaption>
+        </figure>
+      </section>
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>다섯 지표와 임계값 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p4-4-q1" data-correct-feedback="맞습니다. 실제 포트홀을 정상으로 놓치는 FN을 줄이려면 포트홀을 놓치지 않는 비율인 Recall을 중요하게 봐야 합니다." data-wrong-feedback="도로 안전에서 가장 위험한 오류는 실제 포트홀을 정상으로 놓치는 경우입니다."><span class="quiz__index">CHECK 01</span><h3>도로 안전 관점에서 실제 포트홀을 놓치지 않는 능력을 직접 나타내는 지표는?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">Precision</button><button class="quiz-option" type="button" data-answer="correct">Recall</button><button class="quiz-option" type="button" data-answer="wrong">Loss</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+          <article class="quiz" data-quiz="p4-4-q2" data-correct-feedback="맞습니다. Train Loss가 계속 내려가는데 Val Loss가 반대로 오르면 학습 데이터를 외우기 시작한 과적합 신호입니다." data-wrong-feedback="학습 데이터와 검증 데이터의 오답률이 서로 반대 방향으로 움직이는 상황을 찾으세요."><span class="quiz__index">CHECK 02</span><h3>과적합이 시작됐다고 의심할 수 있는 그래프 모양은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="correct">Train Loss는 하락하고 Val Loss는 상승</button><button class="quiz-option" type="button" data-answer="wrong">두 Loss가 함께 하락</button><button class="quiz-option" type="button" data-answer="wrong">두 Accuracy가 함께 상승</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>
