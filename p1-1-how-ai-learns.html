@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="전통 프로그래밍과 기계학습, 지도학습, 이미지 픽셀과 레이블·원-핫 인코딩을 체험하는 수업">
+    <title>인공지능은 어떻게 학습하나 · 딥러닝 CNN으로 포트홀을 찾아라</title>
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("pothole:theme");
+          const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+          document.documentElement.dataset.theme = saved || preferred;
+          if (localStorage.getItem("pothole:mode") === "present") document.documentElement.dataset.mode = "present";
+        } catch { document.documentElement.dataset.theme = "dark"; }
+      })();
+    </script>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/lesson.css">
+    <link rel="stylesheet" href="css/present.css">
+    <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/pixel-grid.js"></script>
+    <script type="module" src="js/widgets/encoding-toggle.js"></script>
+  </head>
+  <body data-page="p1-1-how-ai-learns">
+    <header class="demo-topbar">
+      <a class="brand" href="index.html" aria-label="강의 홈으로">POTHOLE.CNN</a>
+      <div class="present-progress" role="progressbar" aria-label="현재 beat 진행률" aria-valuemin="1"><span class="present-progress__bar" data-present-progress></span></div>
+      <div class="cluster">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><span class="theme-toggle__icon" data-theme-icon aria-hidden="true">☀</span><span data-theme-label>라이트 모드</span></button>
+        <button class="present-toggle" type="button" data-present-toggle aria-pressed="false"><span data-present-label>발표 모드</span><kbd aria-hidden="true">P</kbd></button>
+      </div>
+    </header>
+
+    <main class="doc" id="top">
+      <section class="beat beat--intro lesson-hero" data-beat>
+        <div class="lesson-hero__copy">
+          <p class="eyebrow">Part 1 · Machine Learning</p>
+          <h1>인공지능은 어떻게 학습하나</h1>
+          <p class="lede">사람이 규칙을 모두 적어 주는 대신, 문제와 정답을 보여 주면 컴퓨터는 데이터 속 패턴을 찾아 새로운 문제에 답합니다.</p>
+          <p class="lesson-meta"><span data-page-number>— / —</span><span>Slides 8–17</span></p>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Rules First · S9</p><h2>전통 프로그래밍은 규칙부터 쓴다</h2><p>전통적인 프로그래밍은 사람이 모든 규칙을 직접 코딩해, 입력을 규칙에 넣어 결과를 만드는 방식입니다.</p></div>
+        <div class="split-layout split-layout--wide-media">
+          <article class="analogy" data-icon="📜"><h3>색깔 공 분류 규칙서</h3><p>“빨간 공을 집는다 → 빨간 통에 넣는다 → 다음 공을 확인한다”처럼 가능한 경우의 수를 사람이 빠짐없이 적습니다. 예외가 많아질수록 규칙서도 길어집니다.</p></article>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-009-a.webp" width="1600" height="873" loading="lazy" decoding="async" alt="사람이 색깔 공 분류 규칙을 모두 작성하고 로봇이 그대로 실행하는 네 컷 만화"></div><figcaption><strong>전통적인 프로그래밍</strong>입력 + 사람이 만든 규칙 → 결과</figcaption></figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Learn from Data · S10</p><h2>기계학습은 데이터에서 규칙을 찾는다</h2><p>기계학습(Machine Learning)은 컴퓨터가 데이터를 바탕으로 패턴을 분석하여 스스로 학습하는 방법입니다.</p></div>
+        <div class="split-layout split-layout--wide-media">
+          <article class="analogy" data-icon="🧺"><h3>정답이 담긴 바구니</h3><p>사람은 공을 나누는 모든 규칙 대신 여러 예시와 정답을 제공합니다. 컴퓨터는 색과 모양의 패턴을 학습해 처음 보는 공도 분류합니다.</p></article>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-010-a.webp" width="1600" height="855" loading="lazy" decoding="async" alt="정답이 담긴 여러 바구니를 보고 로봇이 색깔 공의 패턴을 학습하는 네 컷 만화"></div><figcaption><strong>기계학습</strong>데이터 + 정답 → 학습된 규칙, 학습된 규칙 + 새 입력 → 결과</figcaption></figure>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Three Ways · S11</p><h2>기계학습을 나누는 세 가지 방법</h2><p>정답을 주는지, 스스로 구조를 찾는지, 행동 결과에 보상을 주는지에 따라 학습 방식이 달라집니다.</p></div>
+        <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-011-a.webp" width="1600" height="845" loading="lazy" decoding="async" alt="기계학습을 지도학습, 비지도학습, 강화학습으로 분류한 원본 도표"></div><figcaption><strong>기계학습의 분류</strong>지도학습은 정답과 함께, 비지도학습은 정답 없이, 강화학습은 보상과 벌칙을 통해 학습합니다.</figcaption></figure>
+        <div class="concept-grid flow-space">
+          <article class="concept-card" data-tone="accent"><h3>지도학습</h3><p>문제와 정답을 함께 제공하여 학습합니다.</p></article>
+          <article class="concept-card"><h3>비지도학습</h3><p>정답 없이 데이터의 특징이나 묶음을 스스로 찾습니다.</p></article>
+          <article class="concept-card"><h3>강화학습</h3><p>보상과 벌칙을 통해 더 좋은 행동을 학습합니다.</p></article>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Supervised Learning · S12</p><h2>문제와 정답을 함께 보여 준다</h2><p>지도학습은 훈련 데이터와 정답인 레이블을 모두 제공하여 모델을 학습시키는 방법입니다. 학습이 끝나면 새로운 데이터의 정답을 예측합니다.</p></div>
+        <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-012-a.webp" width="1600" height="741" loading="lazy" decoding="async" alt="고양이와 개의 훈련 데이터와 정답 레이블로 모델을 학습한 뒤 새 고양이 이미지를 예측하는 지도학습 흐름"></div><figcaption><strong>학습과 예측</strong>훈련할 때는 데이터와 정답을 함께 주지만, 예측할 때는 새로운 데이터만 줍니다.</figcaption></figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Image as Numbers · S13–14</p><h2>컴퓨터에게 이미지는 숫자 배열이다</h2><p>흑백 이미지의 각 픽셀은 0부터 255까지의 밝기 값 하나입니다. 컬러 이미지는 같은 위치에 Red·Green·Blue 세 값을 쌓아 표현합니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-013-b.webp" width="136" height="136" loading="lazy" decoding="async" alt="검은 배경에 흰색 픽셀로 쓴 숫자 5"></div><figcaption><strong>흑백 이미지</strong>눈에는 숫자 5지만 컴퓨터에는 밝기 값의 격자입니다.</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-013-a.webp" width="937" height="494" loading="lazy" decoding="async" alt="숫자 5를 이루는 각 픽셀의 0부터 255까지 밝기 값을 펼친 행렬"></div><figcaption><strong>픽셀 행렬</strong>검은 배경은 0에 가깝고 밝은 획은 255에 가깝습니다.</figcaption></figure>
+        </div>
+        <figure class="lesson-media flow-space"><div class="lesson-media__stage"><img src="assets/slide-014-a.webp" width="1362" height="601" loading="lazy" decoding="async" alt="고양이 컬러 이미지를 빨강, 초록, 파랑 채널과 3차원 숫자 배열로 분리한 설명 그림"></div><figcaption><strong>RGB 컬러 이미지</strong>5×5 컬러 이미지는 5×5×3 배열로 표현할 수 있습니다.</figcaption></figure>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Interactive · Widget 01</p><h2>숫자 5를 픽셀 값으로 읽어 보기</h2><p>픽셀을 가리키거나 탭해 0~255 값을 확인하고, 흑백 이미지를 RGB 세 채널로 분리해 보세요.</p></div>
+        <section class="widget-shell pixel-widget" id="pixel-grid-widget" data-widget="pixel-grid" aria-labelledby="pixel-grid-title">
+          <header class="widget-titlebar"><h3 id="pixel-grid-title">픽셀 그리드 탐색기</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>픽셀 격자를 준비하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
+        </section>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Encoding · S15–16</p><h2>동물의 이름도 숫자로 바꾼다</h2><p>분류 정보를 숫자로 대응시키며, 이 숫자를 레이블(Label)이라고 합니다. 숫자를 붙이는 방식에 따라 모델이 받아들이는 관계도 달라집니다.</p></div>
+        <div class="media-grid">
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-015-a.webp" width="1600" height="845" loading="lazy" decoding="async" alt="강아지 1, 고양이 2, 앵무새 3으로 번호를 붙였을 때 숫자 크기와 연산을 모델이 관계로 오해하는 레이블 인코딩 만화"></div><figcaption><strong>레이블 인코딩</strong>순서가 없는 종류에 숫자를 붙이면 모델이 3 &gt; 1 같은 관계를 읽을 수 있습니다.</figcaption></figure>
+          <figure class="lesson-media"><div class="lesson-media__stage"><img src="assets/slide-016-a.webp" width="1600" height="845" loading="lazy" decoding="async" alt="강아지, 고양이, 앵무새마다 전용 스위치를 하나씩 두어 벡터로 표현하는 원-핫 인코딩 만화"></div><figcaption><strong>원-핫 인코딩</strong>각 종류의 전용 스위치 하나만 켜 서로 독립적인 존재로 표현합니다.</figcaption></figure>
+        </div>
+        <aside class="note-teacher flow-space"><strong>교사용 메모</strong><p>레이블 인코딩의 1·2·3은 단순한 이름표인데 모델은 크기와 거리 계산이 가능한 값으로 처리할 수 있습니다. 원본 만화의 “3 &gt; 1”, “1 + 3 = 2” 질문으로 오해 가능성을 짚어 주세요.</p></aside>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Original Comparison · S17</p><h2>레이블과 원-핫, 언제 쓸까?</h2><p>원본 비교표의 기준대로, 실제 순서가 있는 값과 서로 동등한 범주를 구분합니다.</p></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <caption>Label Encoding vs One-Hot Encoding</caption>
+            <thead><tr><th scope="col">구분</th><th scope="col">Label Encoding</th><th scope="col">One-Hot Encoding</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">방식</th><td>1, 2, 3 … 숫자 부여</td><td>(1, 0, 0) 등의 벡터 부여</td></tr>
+              <tr><th scope="row">비유</th><td>반 번호, 등수</td><td>전구 스위치, 체크리스트</td></tr>
+              <tr><th scope="row">컴퓨터(모델)의 생각</th><td>“3번이 1번보다 크네? 순서가 있나?”</td><td>“아~ 서로 완전히 다른 종류구나!”</td></tr>
+              <tr><th scope="row">언제 쓸까?</th><td>순서가 있을 때(성적, 사이즈 등)</td><td>순서가 없을 때(동물, 색깔, 지역)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Interactive · Widget 02</p><h2>같은 동물을 두 방식으로 바꾸기</h2><p>강아지·고양이·앵무새가 숫자 하나와 전용 스위치 벡터로 어떻게 달라지는지 비교하세요.</p></div>
+        <section class="widget-shell encoding-widget" id="encoding-toggle-widget" data-widget="encoding-toggle" aria-labelledby="encoding-toggle-title">
+          <header class="widget-titlebar"><h3 id="encoding-toggle-title">인코딩 전환기</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>인코딩 예시를 준비하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
+        </section>
+      </section>
+
+      <hr class="road-divider" aria-hidden="true">
+
+      <section class="beat" data-beat data-tall>
+        <div class="section-head"><p class="eyebrow">Quick Check</p><h2>데이터와 표현 방식 확인</h2></div>
+        <div class="stack">
+          <article class="quiz" data-quiz="p1-1-q1" data-correct-feedback="맞습니다. 지도학습은 훈련 데이터와 정답 레이블을 함께 제공해 패턴을 학습합니다." data-wrong-feedback="S12의 학습 단계에서 모델에 함께 들어가는 두 가지를 떠올려 보세요."><span class="quiz__index">CHECK 01</span><h3>지도학습에서 모델이 학습할 때 필요한 것은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">훈련 데이터만</button><button class="quiz-option" type="button" data-answer="correct">훈련 데이터와 정답 레이블</button><button class="quiz-option" type="button" data-answer="wrong">보상과 벌칙만</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+          <article class="quiz" data-quiz="p1-1-q2" data-correct-feedback="맞습니다. 동물처럼 순서가 없는 범주는 원-핫 인코딩으로 서로 독립적인 종류임을 표현할 수 있습니다." data-wrong-feedback="숫자의 크기가 실제 순서를 뜻하는지 생각해 보세요."><span class="quiz__index">CHECK 02</span><h3>강아지·고양이·앵무새처럼 순서가 없는 범주에 더 알맞은 방식은?</h3><div class="quiz-options"><button class="quiz-option" type="button" data-answer="wrong">레이블 인코딩의 1·2·3</button><button class="quiz-option" type="button" data-answer="correct">원-핫 인코딩의 전용 스위치</button><button class="quiz-option" type="button" data-answer="wrong">픽셀 밝기의 0·255</button></div><p class="quiz__feedback" aria-live="polite">답을 고르면 바로 해설이 나타납니다.</p></article>
+        </div>
+      </section>
+
+      <nav class="page-nav" data-page-nav aria-label="이전 및 다음 페이지" aria-busy="true"><p class="load-error">내비게이션을 불러오는 중입니다.</p></nav>
+    </main>
+    <div class="present-help" data-present-help role="status">← → 이동 · B 블랙아웃 · P 또는 Esc 종료</div>
+    <div class="present-hud"><div class="present-indicator" data-present-indicator aria-live="polite"></div><button class="present-exit" type="button" data-present-exit>나가기</button></div>
+    <div class="blackout" aria-hidden="true"></div>
+  </body>
+</html>
