@@ -7,6 +7,7 @@
     <title>MLP의 한계 · 딥러닝 CNN으로 포트홀을 찾아라</title>
     <script>
       (() => {
+        window.Prism = { manual: true };
         try {
           const saved = localStorage.getItem("pothole:theme");
           const preferred = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
@@ -15,12 +16,15 @@
         } catch { document.documentElement.dataset.theme = "dark"; }
       })();
     </script>
+    <link rel="stylesheet" href="vendor/prism/prism.css">
     <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/lesson.css">
     <link rel="stylesheet" href="css/present.css">
+    <script src="vendor/prism/prism.js" defer></script>
     <script type="module" src="js/site.js"></script>
+    <script type="module" src="js/codeblock.js"></script>
     <script type="module" src="js/present.js"></script>
     <script type="module" src="js/widgets/shift-experiment.js"></script>
   </head>
@@ -58,6 +62,45 @@
           <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-d.webp" width="562" height="552" loading="lazy" decoding="async" alt="오른쪽 아래로 치우친 숫자 4"></div><figcaption><strong>예측 7 · 확률 100%</strong>실제 숫자는 4입니다.</figcaption></figure>
           <figure class="lesson-media"><div class="lesson-media__stage lesson-media__stage--dark"><img src="assets/slide-055-e.webp" width="558" height="558" loading="lazy" decoding="async" alt="왼쪽 위로 치우친 숫자 4"></div><figcaption><strong>예측 2 · 확률 95.6%</strong>틀린 답도 강하게 확신할 수 있습니다.</figcaption></figure>
         </div>
+      </section>
+
+      <section class="beat" data-beat data-tall data-code-step-beat>
+        <div class="section-head">
+          <p class="eyebrow">HANDS ON · 직접 확인하기</p>
+          <h2>정말 그런지 코드로 확인하자</h2>
+          <p>앞에서 만든 MLP 모델은 그대로 두고, 테스트 이미지만 오른쪽·아래로 5칸씩 밀어서 다시 평가합니다.</p>
+        </div>
+        <figure class="code" data-lang="python" data-file="mlp_shift_test.py" data-steps='[{"lines":"4-5","note":"이미지 이동 — 넘파이 슬라이싱으로 오른쪽·아래 5칸씩 민다."},{"lines":"7-13","note":"같은 모델로 원본과 이동본을 각각 평가 — 모델은 전혀 건드리지 않았다."},{"lines":"14","note":"정확도 차이가 곧 MLP가 위치에 얼마나 민감한지를 보여준다."},{"lines":"16-26","note":"위아래로 나란히 그려 사람 눈에는 같은 숫자임을 확인한다."}]'>
+          <figcaption><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="fname">mlp_shift_test.py</span><button class="btn-copy" type="button">복사</button></figcaption>
+          <div class="code-viewport"><pre class="line-numbers"><code class="language-python"># MLP의 한계 확인: 테스트 이미지를 오른쪽 5칸, 아래 5칸 이동시키기
+import numpy as np
+
+shifted = np.zeros_like(x_test)
+shifted[:, 5:, 5:] = x_test[:, :-5, :-5]   # 아래로 5, 오른쪽으로 5
+
+print("=== 원본 이미지 ===")
+loss_o, acc_o = model.evaluate(x_test, y_test, verbose=0)
+print(f"정확도: {acc_o*100:.2f}%")
+
+print("\n=== 5칸 이동한 이미지 ===")
+loss_s, acc_s = model.evaluate(shifted, y_test, verbose=0)
+print(f"정확도: {acc_s*100:.2f}%")
+print(f"\n정확도 하락: {(acc_o - acc_s)*100:.2f}%p")
+
+# 눈으로 확인
+plt.figure(figsize=(10, 4))
+for i in range(5):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(x_test[i], cmap='gray'); plt.axis('off')
+    plt.title(f"원본 {y_test[i]}")
+    plt.subplot(2, 5, i + 6)
+    plt.imshow(shifted[i], cmap='gray'); plt.axis('off')
+    plt.title("5칸 이동")
+plt.tight_layout()
+plt.show()</code></pre></div>
+          <div class="code-note" aria-live="polite">앞서 학습한 <code>model</code>, <code>x_test</code>, <code>y_test</code>가 메모리에 있어야 합니다. 노트북을 새로 열었다면 학습 셀부터 다시 실행하세요.</div>
+        </figure>
+        <aside class="note-teacher"><strong>교사용 메모</strong><p>실행 전에 결과를 먼저 예측하게 한 뒤 실행시키면 “숫자는 그대로인데 왜 못 맞히지?”라는 질문이 나옵니다. 이것이 Flatten이 위치를 고정한다는 다음 설명으로 이어집니다.</p></aside>
       </section>
 
       <section class="beat" data-beat>
