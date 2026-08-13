@@ -68,6 +68,208 @@ function makeElement(tagName, className, text) {
   return element;
 }
 
+function preparePageNavigation() {
+  let root = document.querySelector("[data-page-nav]");
+  const doc = document.querySelector(".doc");
+
+  if (!root && doc) {
+    root = makeElement("nav", "page-nav");
+    root.dataset.pageNav = "";
+    root.setAttribute("aria-label", "이전 및 다음 페이지");
+    root.setAttribute("aria-busy", "true");
+    root.append(makeElement("p", "load-error", "내비게이션을 불러오는 중입니다."));
+    doc.append(root);
+  }
+
+  if (root) {
+    root.dataset.beat = "";
+    root.dataset.pageNavBeat = "";
+  }
+
+  return root;
+}
+
+function setupCourseMenu() {
+  const topbar = document.querySelector(".demo-topbar");
+  const brand = topbar?.querySelector(".brand");
+  if (!topbar || !brand) return null;
+
+  const toggle = makeElement("button", "course-menu-toggle");
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", "강의 목차 열기");
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", "course-menu-panel");
+  toggle.innerHTML = '<span aria-hidden="true">☰</span>';
+  topbar.insertBefore(toggle, brand);
+
+  const scrim = makeElement("div", "course-menu-scrim");
+  scrim.dataset.courseMenuDismiss = "";
+  scrim.setAttribute("aria-hidden", "true");
+
+  const panel = makeElement("aside", "course-menu-panel");
+  panel.id = "course-menu-panel";
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-label", "강의 목차");
+  panel.setAttribute("aria-hidden", "true");
+  panel.inert = true;
+
+  const head = makeElement("header", "course-menu-panel__head");
+  const heading = makeElement("div", "course-menu-panel__heading");
+  heading.append(
+    makeElement("span", "course-menu-panel__eyebrow", "COURSE INDEX"),
+    makeElement("h2", "course-menu-panel__title", "강의 목차"),
+  );
+  const close = makeElement("button", "course-menu-panel__close", "닫기");
+  close.type = "button";
+  close.setAttribute("aria-label", "강의 목차 닫기");
+  head.append(heading, close);
+
+  const nav = makeElement("nav", "course-menu-nav");
+  nav.setAttribute("aria-label", "전체 강의 페이지");
+  nav.dataset.courseMenuList = "";
+  nav.append(makeElement("p", "load-error", "목차를 불러오는 중입니다."));
+  panel.append(head, nav);
+  document.body.append(scrim, panel);
+
+  let restoreFocus = null;
+
+  const menuLinks = () => [...panel.querySelectorAll("[data-course-menu-link]")];
+  const focusables = () => [close, ...menuLinks()];
+
+  const closeMenu = ({ restore = true } = {}) => {
+    if (document.documentElement.dataset.courseMenu !== "open") return;
+    delete document.documentElement.dataset.courseMenu;
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "강의 목차 열기");
+    panel.setAttribute("aria-hidden", "true");
+    panel.inert = true;
+    document.dispatchEvent(new CustomEvent("pothole:menuchange", { detail: { open: false } }));
+    if (restore) (restoreFocus || toggle).focus();
+  };
+
+  const openMenu = () => {
+    restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : toggle;
+    document.documentElement.dataset.courseMenu = "open";
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "강의 목차 닫기");
+    panel.setAttribute("aria-hidden", "false");
+    panel.inert = false;
+    document.dispatchEvent(new CustomEvent("pothole:menuchange", { detail: { open: true } }));
+    const current = panel.querySelector('[aria-current="page"]');
+    requestAnimationFrame(() => (current || menuLinks()[0] || close).focus());
+  };
+
+  const toggleMenu = () => {
+    if (document.documentElement.dataset.courseMenu === "open") closeMenu();
+    else openMenu();
+  };
+
+  toggle.addEventListener("click", toggleMenu);
+  close.addEventListener("click", () => closeMenu());
+  scrim.addEventListener("click", () => closeMenu());
+  document.addEventListener("pointerdown", (event) => {
+    if (document.documentElement.dataset.courseMenu !== "open") return;
+    if (panel.contains(event.target) || toggle.contains(event.target)) return;
+    closeMenu();
+  }, true);
+  panel.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest("[data-course-menu-link]")) {
+      closeMenu({ restore: false });
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (document.documentElement.dataset.courseMenu !== "open") return;
+
+    const code = event.code;
+    const links = menuLinks();
+
+    if (code === "Escape") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeMenu();
+      return;
+    }
+
+    if (["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(code)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (!links.length) return;
+      const currentIndex = links.indexOf(document.activeElement);
+      const delta = ["ArrowDown", "ArrowRight"].includes(code) ? 1 : -1;
+      const fallback = delta > 0 ? -1 : 0;
+      const nextIndex = (currentIndex === -1 ? fallback : currentIndex) + delta;
+      links[(nextIndex + links.length) % links.length].focus();
+      return;
+    }
+
+    if (code === "Tab") {
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+      event.stopPropagation();
+      return;
+    }
+
+    // 패널이 열린 동안 P/B/Space 같은 발표 단축키가 뒤 페이지에 전달되지 않게 한다.
+    event.stopPropagation();
+  }, true);
+
+  return {
+    render(navData, visited) {
+      nav.replaceChildren();
+
+      const home = navData.pages.find((page) => page.part === 0);
+      if (home) nav.append(makeCourseMenuLink(home, visited, "HOME"));
+
+      navData.parts.forEach((part) => {
+        const section = makeElement("section", "course-menu-part");
+        const partHead = makeElement("header", "course-menu-part__head");
+        partHead.append(
+          makeElement("span", "course-menu-part__number", `PART ${String(part.id).padStart(2, "0")}`),
+          makeElement("strong", "course-menu-part__title", part.title),
+        );
+        const list = makeElement("ol", "course-menu-list");
+        navData.pages.filter((page) => page.part === part.id).forEach((page) => {
+          const item = makeElement("li", "course-menu-list__item");
+          item.append(makeCourseMenuLink(page, visited));
+          list.append(item);
+        });
+        section.append(partHead, list);
+        nav.append(section);
+      });
+    },
+    showError() {
+      nav.replaceChildren(makeElement("p", "load-error", "목차를 불러오지 못했습니다."));
+    },
+  };
+}
+
+function makeCourseMenuLink(page, visited, label = "") {
+  const link = makeElement("a", "course-menu-link");
+  link.href = page.href;
+  link.dataset.courseMenuLink = "";
+  if (page.slug === currentSlug) link.setAttribute("aria-current", "page");
+  if (visited.has(page.slug)) link.classList.add("is-visited");
+
+  const position = makeElement("span", "course-menu-link__position", String(page.index).padStart(2, "0"));
+  const title = makeElement("span", "course-menu-link__title", page.title);
+  const check = makeElement("span", "course-menu-link__check", visited.has(page.slug) ? "✓" : "");
+  check.setAttribute("aria-hidden", "true");
+  if (label) position.textContent = label;
+  link.append(position, title, check);
+  return link;
+}
+
 function renderCurriculum(nav, visited) {
   const root = document.querySelector("[data-nav-tree]");
   if (!root) return;
@@ -160,12 +362,6 @@ function renderPageNavigation(nav) {
   const part = nav.parts.find((item) => item.id === current.part);
 
   const makeNavLink = (page, direction) => {
-    if (!page) {
-      const empty = makeElement("span", `page-nav__link page-nav__link--${direction} is-disabled`, "마지막 페이지");
-      empty.setAttribute("aria-hidden", "true");
-      return empty;
-    }
-
     const link = makeElement("a", `page-nav__link page-nav__link--${direction}`);
     link.href = page.href;
     link.rel = direction === "previous" ? "prev" : "next";
@@ -175,14 +371,29 @@ function renderPageNavigation(nav) {
     return link;
   };
 
+  const home = nav.pages.find((page) => page.part === 0);
+  const makeCourseEndLink = () => {
+    const link = makeElement("a", "page-nav__link page-nav__link--next page-nav__link--course-end");
+    link.href = home?.href || "index.html";
+    const label = makeElement("span", "page-nav__label", "강의 끝");
+    const title = makeElement("strong", "page-nav__title", "강의 홈으로");
+    link.append(label, title);
+    return link;
+  };
+
   const status = makeElement("p", "page-nav__status");
   status.append(
     makeElement("span", "page-nav__position", `${String(current.index).padStart(2, "0")} / ${String(nav.course.totalPages).padStart(2, "0")}`),
-    makeElement("strong", "page-nav__current", current.title),
     makeElement("span", "page-nav__part", part ? `PART ${String(part.id).padStart(2, "0")}` : "COURSE HOME"),
+    makeElement("strong", "page-nav__current", current.title),
   );
 
-  root.replaceChildren(makeNavLink(previous, "previous"), status, makeNavLink(next, "next"));
+  root.classList.toggle("is-course-end", !next);
+  root.classList.toggle("has-no-previous", !previous);
+  root.dataset.nextHref = next?.href || "";
+  const items = [status, next ? makeNavLink(next, "next") : makeCourseEndLink()];
+  if (previous) items.push(makeNavLink(previous, "previous"));
+  root.replaceChildren(...items);
   root.removeAttribute("aria-busy");
 }
 
@@ -281,11 +492,13 @@ async function loadHomeData(visited) {
   if (navResult.status === "fulfilled") {
     renderPageNavigation(navResult.value);
     renderCurriculum(navResult.value, visited);
+    courseMenu?.render(navResult.value, visited);
     document.dispatchEvent(new CustomEvent("pothole:navready", { detail: { nav: navResult.value } }));
   } else {
     console.error(navResult.reason);
     showLoadError("[data-nav-tree]", "목차를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     showLoadError("[data-page-nav]", "이전·다음 페이지를 불러오지 못했습니다.");
+    courseMenu?.showError();
   }
 
   if (linksResult.status === "fulfilled") {
@@ -297,6 +510,8 @@ async function loadHomeData(visited) {
 }
 
 const visited = recordVisit(currentSlug);
+preparePageNavigation();
+const courseMenu = setupCourseMenu();
 setupThemeToggle();
 setupQuizzes();
 loadHomeData(visited);

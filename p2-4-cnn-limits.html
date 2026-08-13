@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/present.css">
     <script type="module" src="js/site.js"></script>
     <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/shift-experiment.js"></script>
   </head>
   <body data-page="p2-4-cnn-limits">
     <header class="demo-topbar">
@@ -109,12 +110,13 @@
 
       <section class="beat" data-beat>
         <div class="section-head">
-          <p class="eyebrow">Widget Placeholder</p>
+          <p class="eyebrow">Interactive · Widget 11</p>
           <h2>같은 숫자를 직접 옮겨 보기</h2>
         </div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="shift-widget-title">
-          <header class="widget-titlebar"><h3 id="shift-widget-title">이동 실험 · MLP vs CNN</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>이동 거리와 예측 확률 비교</h3><p>숫자를 0~5칸 옮기면서 MLP와 CNN의 예측 확률이 각각 어떻게 무너지는지 나란히 확인하게 됩니다.</p></div></div>
+        <section class="widget-shell shift-widget" data-widget="shift-experiment" aria-labelledby="shift-widget-title">
+          <header class="widget-titlebar"><h3 id="shift-widget-title">이동 실험 · MLP vs CNN</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>이동별 예측값을 불러오고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 

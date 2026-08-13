@@ -26,6 +26,7 @@
     <script type="module" src="js/site.js"></script>
     <script type="module" src="js/codeblock.js"></script>
     <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/param-explosion.js"></script>
   </head>
   <body data-page="p1-5-mnist-mlp">
     <header class="demo-topbar">
@@ -267,9 +268,10 @@ print(f"→ 이후로 val_loss가 오르면 그때부터 과적합입니다")</c
 
       <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Widget ⑥ · Placeholder</p><h2>해상도가 커지면 MLP 연결은 얼마나 늘어날까?</h2></div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="mlp-param-widget-title">
-          <header class="widget-titlebar"><h3 id="mlp-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>28×28에서 4K까지 해상도 비교</h3><p>해상도 슬라이더를 움직이면 MLP의 첫 Dense 파라미터가 약 10만 개에서 10억 개 이상으로 늘어나는 모습을 CNN 값과 나란히 보여 줄 예정입니다.</p></div></div>
+        <section class="widget-shell param-widget" data-widget="param-explosion" aria-labelledby="mlp-param-widget-title">
+          <header class="widget-titlebar"><h3 id="mlp-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>해상도별 파라미터를 계산하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 

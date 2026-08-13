@@ -1,5 +1,16 @@
 :root,
 [data-theme="dark"] {
+  --scale: 1;
+
+  /* 타이포 기준값 — viewport에 따라 1366px과 1920px 사이에서도 계속 증가한다. */
+  --fs-body-base: clamp(15.5px, calc(14.72px + 0.119vw), 17px);
+  --fs-h1-base: clamp(38px, calc(34.67px + 0.903vw), 52px);
+  --fs-h2-base: clamp(26px, calc(24.1px + 0.516vw), 34px);
+  --fs-h3-base: clamp(20px, calc(19.52px + 0.129vw), 22px);
+  --fs-code-base: clamp(14px, calc(13.64px + 0.097vw), 15.5px);
+  --fs-code-note-base: clamp(13px, calc(12.52px + 0.129vw), 15px);
+  --fs-caption-base: clamp(12px, calc(11.64px + 0.097vw), 13.5px);
+
   color-scheme: dark;
 
   /* 배경 계열 — 아스팔트 */

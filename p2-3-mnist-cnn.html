@@ -26,6 +26,7 @@
     <script type="module" src="js/site.js"></script>
     <script type="module" src="js/codeblock.js"></script>
     <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/param-explosion.js"></script>
   </head>
   <body data-page="p2-3-mnist-cnn">
     <header class="demo-topbar">
@@ -288,9 +289,10 @@ plot_history_subplot(history)</code></pre></div>
 
       <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Widget ⑥ · Placeholder</p><h2>MLP와 CNN의 파라미터를 같은 눈금에서 비교</h2></div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="cnn-param-widget-title">
-          <header class="widget-titlebar"><h3 id="cnn-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>해상도와 구조에 따른 연결 수 비교</h3><p>같은 해상도에서 MLP와 CNN의 파라미터가 어디에서 늘어나는지, 28×28에서 4K까지 해상도를 움직이며 나란히 비교할 예정입니다.</p></div></div>
+        <section class="widget-shell param-widget" data-widget="param-explosion" aria-labelledby="cnn-param-widget-title">
+          <header class="widget-titlebar"><h3 id="cnn-param-widget-title">파라미터 폭발 계산기</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>해상도별 파라미터를 계산하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 

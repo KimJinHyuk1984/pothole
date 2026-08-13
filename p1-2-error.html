@@ -22,6 +22,8 @@
     <link rel="stylesheet" href="css/present.css">
     <script type="module" src="js/site.js"></script>
     <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/mse-calculator.js"></script>
+    <script type="module" src="js/widgets/gradient-descent.js"></script>
   </head>
   <body data-page="p1-2-error">
     <header class="demo-topbar">
@@ -132,12 +134,13 @@
 
       <section class="beat" data-beat>
         <div class="section-head">
-          <p class="eyebrow">Widget Placeholder</p>
+          <p class="eyebrow">Interactive · Widget 09</p>
           <h2>오차가 바뀌는 순간 직접 보기</h2>
         </div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="mse-widget-title">
-          <header class="widget-titlebar"><h3 id="mse-widget-title">MSE 계산기</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>예측선을 움직여 오차를 비교하는 실험</h3><p>예측선을 드래그하면 오차·절댓값·제곱·합계가 실시간으로 바뀌고, 오차의 합이 왜 0이 되는지 확인하게 됩니다.</p></div></div>
+        <section class="widget-shell mse-widget" data-widget="mse-calculator" aria-labelledby="mse-widget-title">
+          <header class="widget-titlebar"><h3 id="mse-widget-title">MSE 계산기</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>오차 표를 준비하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 
@@ -171,12 +174,13 @@
 
       <section class="beat" data-beat>
         <div class="section-head">
-          <p class="eyebrow">Widget Placeholder</p>
+          <p class="eyebrow">Interactive · Widget 10</p>
           <h2>보폭이 너무 크면 어떻게 될까?</h2>
         </div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="descent-widget-title">
-          <header class="widget-titlebar"><h3 id="descent-widget-title">경사하강 시뮬레이터</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>학습률에 따라 달라지는 공의 이동</h3><p>학습률 슬라이더를 움직여 작은 보폭의 수렴과 너무 큰 보폭의 발산을 곡면 위 공으로 비교하게 됩니다.</p></div></div>
+        <section class="widget-shell descent-widget" data-widget="gradient-descent" aria-labelledby="descent-widget-title">
+          <header class="widget-titlebar"><h3 id="descent-widget-title">경사하강 시뮬레이터</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>경사 곡선을 준비하고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 

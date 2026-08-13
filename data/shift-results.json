@@ -1,0 +1,12 @@
+{
+  "sourceNote": "shift 5의 MLP 예측 2는 S57, CNN 예측 5는 S85의 실제 실행 결과다. 0~4칸의 예측 클래스와 확률은 위치 변화 경향을 설명하기 위한 수업용 근사값이며 실제 추론 결과가 아니다.",
+  "actualLabel": 7,
+  "results": [
+    {"shift":0,"source":"수업용 근사","mlp":{"prediction":7,"confidence":0.99},"cnn":{"prediction":7,"confidence":0.99}},
+    {"shift":1,"source":"수업용 근사","mlp":{"prediction":7,"confidence":0.94},"cnn":{"prediction":7,"confidence":0.98}},
+    {"shift":2,"source":"수업용 근사","mlp":{"prediction":7,"confidence":0.72},"cnn":{"prediction":7,"confidence":0.94}},
+    {"shift":3,"source":"수업용 근사","mlp":{"prediction":2,"confidence":0.48},"cnn":{"prediction":7,"confidence":0.78}},
+    {"shift":4,"source":"수업용 근사","mlp":{"prediction":2,"confidence":0.67},"cnn":{"prediction":5,"confidence":0.52}},
+    {"shift":5,"source":"S57·S85 실제 결과","mlp":{"prediction":2,"confidence":null},"cnn":{"prediction":5,"confidence":null}}
+  ]
+}

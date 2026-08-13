@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/present.css">
     <script type="module" src="js/site.js"></script>
     <script type="module" src="js/present.js"></script>
+    <script type="module" src="js/widgets/shift-experiment.js"></script>
   </head>
   <body data-page="p1-6-mlp-limits">
     <header class="demo-topbar">
@@ -112,9 +113,10 @@
 
       <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Interactive · Widget ⑦</p><h2>이동 거리를 바꾸면 확률은 어떻게 무너질까?</h2></div>
-        <section class="widget-shell widget-placeholder" aria-labelledby="shift-widget-title">
-          <header class="widget-titlebar"><h3 id="shift-widget-title">MNIST 이동 실험</h3><span class="widget-tag">준비 중</span></header>
-          <div class="widget-body"><div class="widget-placeholder__copy"><h3>0칸에서 5칸까지 이동</h3><p>이동 슬라이더를 조절하면 미리 계산한 예측 확률이 어떻게 달라지는지 보여 주는 위젯이 들어옵니다.</p></div></div>
+        <section class="widget-shell shift-widget" data-widget="shift-experiment" aria-labelledby="shift-widget-title">
+          <header class="widget-titlebar"><h3 id="shift-widget-title">MNIST 이동 실험</h3><span class="widget-tag">직접 해보기</span></header>
+          <div class="widget-body" data-widget-body><p>이동별 예측값을 불러오고 있습니다.</p></div>
+          <div class="control-bar" data-widget-controls></div>
         </section>
       </section>
 

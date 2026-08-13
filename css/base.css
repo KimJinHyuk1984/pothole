@@ -19,7 +19,7 @@ body {
     var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
-  font-size: 15.5px;
+  font-size: calc(var(--fs-body-base) * var(--scale));
   font-weight: 400;
   line-height: 1.8;
   overflow-wrap: break-word;
@@ -109,17 +109,17 @@ h2 {
 
 h1 {
   max-width: 15ch;
-  font-size: clamp(2.4rem, 7vw, 5.4rem);
+  font-size: calc(var(--fs-h1-base) * var(--scale));
   line-height: 1.04;
 }
 
 h2 {
-  font-size: clamp(1.65rem, 4vw, 2.75rem);
+  font-size: calc(var(--fs-h2-base) * var(--scale));
   line-height: 1.18;
 }
 
 h3 {
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-size: calc(var(--fs-h3-base) * var(--scale));
   line-height: 1.35;
   letter-spacing: -0.02em;
 }
@@ -131,7 +131,8 @@ h3 {
   display: flex;
   min-height: 3.75rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.75rem;
   padding-inline: var(--gutter);
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--bar) 92%, transparent);
@@ -144,17 +145,18 @@ h3 {
   gap: 0.65rem;
   color: var(--fg);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: calc(0.78rem * var(--scale));
   font-weight: 700;
   letter-spacing: 0.08em;
   text-decoration: none;
 }
 
-.brand::before {
-  width: 1.9rem;
-  height: 0.22rem;
-  background: var(--accent);
-  content: "";
+.demo-topbar > .present-progress {
+  margin-inline: 1rem;
+}
+
+.demo-topbar > .cluster {
+  margin-left: auto;
 }
 
 .doc {
@@ -177,7 +179,7 @@ h3 {
 .lede {
   max-width: 44rem;
   color: var(--fg-soft);
-  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  font-size: calc(clamp(1.05rem, 2vw, 1.25rem) * var(--scale));
   line-height: 1.72;
 }
 
@@ -197,7 +199,7 @@ h3 {
 .caption-text,
 .type-meta {
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: calc(0.74rem * var(--scale));
   font-weight: 500;
   letter-spacing: 0.12em;
   line-height: 1.5;
@@ -242,7 +244,7 @@ h3 {
 
 .type-row .sample-h1 {
   font-family: var(--font-display-ko);
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: calc(clamp(2rem, 5vw, 4rem) * var(--scale));
   font-weight: 700;
   letter-spacing: var(--tracking-title);
   line-height: 1.08;
@@ -250,7 +252,7 @@ h3 {
 
 .type-row .sample-h2 {
   font-family: var(--font-display-ko);
-  font-size: clamp(1.4rem, 3vw, 2.25rem);
+  font-size: calc(clamp(1.4rem, 3vw, 2.25rem) * var(--scale));
   font-weight: 700;
   letter-spacing: var(--tracking-title);
   line-height: 1.2;

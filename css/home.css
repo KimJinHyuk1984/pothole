@@ -16,7 +16,7 @@
 .hero-kicker {
   color: var(--fg-soft);
   font-family: var(--font-mono);
-  font-size: clamp(0.72rem, 1.3vw, 0.86rem);
+  font-size: calc(clamp(0.72rem, 1.3vw, 0.86rem) * var(--scale));
   letter-spacing: 0.08em;
 }
 
@@ -44,7 +44,7 @@
 .hero-page-count {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--scale));
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -119,7 +119,7 @@
   background: rgba(8, 9, 11, 0.72);
   color: #ffc72c;
   font-family: var(--font-mono);
-  font-size: 0.62rem;
+  font-size: calc(0.62rem * var(--scale));
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -160,7 +160,7 @@
   align-items: center;
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--scale));
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -198,7 +198,7 @@
 .curriculum-origin__check {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -237,7 +237,7 @@
 .curriculum-list__position {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--scale));
   font-weight: 500;
   letter-spacing: 0.09em;
 }
@@ -250,7 +250,7 @@
 }
 
 .curriculum-card__title {
-  font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+  font-size: calc(clamp(1.2rem, 2.4vw, 1.65rem) * var(--scale));
 }
 
 .curriculum-card__count {
@@ -259,12 +259,12 @@
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: 999px;
   color: var(--fg-soft);
-  font-size: 0.62rem;
+  font-size: calc(0.62rem * var(--scale));
 }
 
 .curriculum-card__subtitle {
   color: var(--fg-soft);
-  font-size: 0.88rem;
+  font-size: calc(0.88rem * var(--scale));
   line-height: 1.55;
 }
 
@@ -359,7 +359,7 @@
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   letter-spacing: 0.06em;
 }
 
@@ -370,7 +370,7 @@
 
 .instructor-name {
   color: var(--fg-soft);
-  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-size: calc(clamp(1rem, 2vw, 1.2rem) * var(--scale));
 }
 
 .instructor-name a {
@@ -438,7 +438,7 @@
 .resource-link__status {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -500,14 +500,14 @@
 .goal-flow__number {
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: calc(0.72rem * var(--scale));
   letter-spacing: 0.08em;
 }
 
 .goal-flow strong {
   display: block;
   margin-bottom: 0.25rem;
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--scale));
 }
 
 .goal-flow p,
@@ -538,7 +538,7 @@
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   letter-spacing: 0.04em;
   line-height: 1.55;
 }
@@ -561,7 +561,7 @@
   border-radius: var(--r-sm);
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   letter-spacing: 0.04em;
 }
 
@@ -573,7 +573,7 @@
   padding-block: 2rem 3rem;
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: calc(0.68rem * var(--scale));
   letter-spacing: 0.05em;
 }
 

@@ -1,5 +1,6 @@
 const root = document.documentElement;
 const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const HELP_SESSION_KEY = "pothole:present-help-shown";
 
 function applyLineHighlight(pre, lines) {
   pre.querySelectorAll(".line-highlight").forEach((highlight) => highlight.remove());
@@ -167,6 +168,8 @@ class PresentationController {
     this.updateCurrentBeat();
 
     if (localStorage.getItem("pothole:mode") === "present") {
+      this.currentIndex = 0;
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
       this.setPresent(true, { restore: true });
     } else {
       this.syncToggle();
@@ -185,6 +188,15 @@ class PresentationController {
     this.toggle?.addEventListener("click", () => this.setPresent(!this.isPresent));
     this.exitButton?.addEventListener("click", () => this.setPresent(false));
     document.addEventListener("keydown", (event) => this.onKeydown(event));
+    document.addEventListener("pothole:navready", () => this.refreshBeats());
+    document.addEventListener("pothole:menuchange", (event) => {
+      if (event.detail?.open) {
+        delete root.dataset.cursor;
+        window.clearTimeout(this.cursorTimer);
+      } else {
+        this.resetCursorTimer();
+      }
+    });
     document.addEventListener("pointermove", () => this.resetCursorTimer(), { passive: true });
     const scheduleBeatUpdate = () => {
       if (this.scrollFrame) return;
@@ -204,7 +216,12 @@ class PresentationController {
       localStorage.setItem("pothole:mode", "present");
       this.resetCursorTimer();
       this.showHelp();
-      requestAnimationFrame(() => this.goToBeat(this.currentIndex, "stay", restore ? "auto" : undefined));
+      if (restore) {
+        this.currentIndex = 0;
+        if (this.doc) this.doc.scrollTop = 0;
+        window.scrollTo(0, 0);
+      }
+      requestAnimationFrame(() => this.goToBeat(restore ? 0 : this.currentIndex, "stay", restore ? "auto" : undefined));
     } else {
       delete root.dataset.mode;
       delete root.dataset.cursor;
@@ -238,6 +255,12 @@ class PresentationController {
 
   showHelp() {
     if (!this.help) return;
+    try {
+      if (sessionStorage.getItem(HELP_SESSION_KEY) === "true") return;
+      sessionStorage.setItem(HELP_SESSION_KEY, "true");
+    } catch {
+      // 세션 저장소가 차단되어도 현재 페이지의 안내는 정상 표시한다.
+    }
     window.clearTimeout(this.helpTimer);
     this.help.classList.remove("is-visible");
 
@@ -307,6 +330,11 @@ class PresentationController {
 
   next() {
     const beat = this.beats[this.currentIndex];
+    if (beat?.matches("[data-page-nav-beat]")) {
+      const nextHref = beat.dataset.nextHref;
+      if (nextHref) location.assign(nextHref);
+      return;
+    }
     const stepper = this.steppers.get(beat);
     if (stepper && stepper.index < stepper.length) {
       stepper.setStep(stepper.index + 1);
@@ -339,6 +367,15 @@ class PresentationController {
       behavior: behavior || (motionQuery.matches ? "auto" : "smooth"),
       block: target.hasAttribute("data-tall") ? "start" : "center",
     });
+    this.updateProgress();
+  }
+
+  refreshBeats() {
+    const current = this.beats[this.currentIndex];
+    this.beats = [...document.querySelectorAll("[data-beat]")];
+    const refreshedIndex = current ? this.beats.indexOf(current) : -1;
+    if (refreshedIndex >= 0) this.currentIndex = refreshedIndex;
+    else this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.beats.length - 1));
     this.updateProgress();
   }
 

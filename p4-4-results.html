@@ -49,7 +49,7 @@
 
       <hr class="road-divider" aria-hidden="true">
 
-      <section class="beat" data-beat data-tall>
+      <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Metric 01 / 05 · S172–173</p><h2>Loss · 오답률</h2><p>학습이 진행될수록 매끄럽게 내려가야 하는 값입니다.</p></div>
         <figure class="lesson-media">
           <div class="metric-crop metric-crop--loss"><img src="assets/slide-173-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training loss와 Validation loss 그래프"></div>
@@ -58,7 +58,7 @@
         <aside class="note-teacher"><strong>교사용 메모</strong><p>Train Loss는 내려가는데 Val Loss가 올라가면 과적합 시작.</p></aside>
       </section>
 
-      <section class="beat" data-beat data-tall>
+      <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Metric 02 / 05 · S174</p><h2>Accuracy · 정확도</h2><p>전체 예측 중 맞힌 비율이지만, 데이터 불균형이 있다면 중요도가 낮아질 수 있습니다.</p></div>
         <figure class="lesson-media">
           <div class="metric-crop metric-crop--accuracy"><img src="assets/slide-174-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training accuracy와 Validation accuracy 그래프"></div>
@@ -67,7 +67,7 @@
         <p class="source-warning">원본 문장의 <code>loss</code> 표기를 보존했습니다. 이 beat에서는 각각 Training accuracy와 Validation accuracy를 가리킵니다.</p>
       </section>
 
-      <section class="beat" data-beat data-tall>
+      <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Metric 03 / 05 · S175</p><h2>AUC · 변별력</h2><p>모델이 “정상”과 “포트홀”을 얼마나 명확하게 구분해낼 수 있는지에 대한 종합 점수입니다.</p></div>
         <figure class="lesson-media">
           <div class="metric-crop metric-crop--auc"><img src="assets/slide-175-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training AUC와 Validation AUC 그래프"></div>
@@ -76,7 +76,7 @@
         <p class="source-warning">원본 문장의 <code>loss</code> 표기를 보존했습니다. 이 beat에서는 각각 Training AUC와 Validation AUC를 가리킵니다.</p>
       </section>
 
-      <section class="beat" data-beat data-tall>
+      <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Metric 04 / 05 · S176</p><h2>Precision · 정밀도</h2><p>모델이 “포트홀이다!”라고 외친 것 중 실제 포트홀인 비율입니다.</p></div>
         <figure class="lesson-media">
           <div class="metric-crop metric-crop--precision"><img src="assets/slide-176-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training precision과 Validation precision 그래프"></div>
@@ -85,7 +85,7 @@
         <p class="source-warning">원본 문장의 <code>Validation loss</code> 표기를 보존했습니다. 이 beat에서는 Validation precision을 가리킵니다.</p>
       </section>
 
-      <section class="beat" data-beat data-tall>
+      <section class="beat" data-beat>
         <div class="section-head"><p class="eyebrow">Metric 05 / 05 · S177</p><h2>Recall · 재현율</h2><p>실제 포트홀들을 모델이 놓치지 않고 찾아낸 비율입니다. 도로 안전 측면에서는 가장 중요합니다.</p></div>
         <figure class="lesson-media">
           <div class="metric-crop metric-crop--recall"><img src="assets/slide-177-a.webp" width="1344" height="741" loading="lazy" decoding="async" alt="포트홀 CNN의 Training recall과 Validation recall 그래프"></div>
